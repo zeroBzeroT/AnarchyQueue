@@ -1,6 +1,7 @@
 package org.zeroBzeroT.anarchyqueue;
 
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.plugin.Command;
 
@@ -15,18 +16,19 @@ public class SlotsCommand extends Command {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 1) {
-            sender.sendMessage(new TextComponent("Correct command usage: /globalslots <int:current>"));
+        if (sender != ProxyServer.getInstance().getConsole()) {
+            sender.sendMessage(new TextComponent("§cUnknown command"));
             return;
-        }
-
-        if (args[0].equalsIgnoreCase("current")) {
-            sender.sendMessage(new TextComponent("Current max capacity: " + Main.GLOBAL_SLOTS));
+        } else if (args.length < 1) {
+            sender.sendMessage(new TextComponent("§cCorrect command usage: /globalslots <int:current>"));
+            return;
+        } else if (args[0].equalsIgnoreCase("current")) {
+            sender.sendMessage(new TextComponent("§3Current max capacity: " + Main.GLOBAL_SLOTS));
             return;
         }
 
         int integer = Integer.parseInt(args[0]);
-        sender.sendMessage(new TextComponent("New max capacity is: " + integer));
+        sender.sendMessage(new TextComponent("§3New max capacity is: " + integer));
         Main.GLOBAL_SLOTS = integer;
     }
 }

@@ -29,6 +29,8 @@ public class Main extends Plugin {
 
         Config config = Config.getConfig(folder + "/config.json");
 
+        Main.GLOBAL_SLOTS = config.maxPlayers;
+
         Queue queue = new Queue(config);
 
         // Commands

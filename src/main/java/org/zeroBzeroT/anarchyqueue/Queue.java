@@ -46,7 +46,7 @@ public class Queue implements Listener {
         ServerInfoGetter mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
 
         // Allow players to join the main server
-        while (mainServerInfo.isOnline && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
+        while (mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
             try {
                 mutex.acquire();
 
@@ -59,7 +59,7 @@ public class Queue implements Listener {
 
                 Callback<Boolean> cb = (result, error) -> {
                     if (result) {
-                        Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (ProxyServer.getInstance().getServerInfo(config.target).getPlayers().size() + 1) + ".");
+                        Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (ProxyServer.getInstance().getServerInfo(config.target).getPlayers().size() + 1) + " of " + Main.GLOBAL_SLOTS + ".");
                     } else {
                         Main.log("flushQueue", "§c" + player.toString() + "s connection to " + config.target + " failed: " + error.getMessage());
                         player.sendMessage(TextComponent.fromLegacyText("§cConnection to the main server failed!"));
