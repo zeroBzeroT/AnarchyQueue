@@ -4,21 +4,20 @@ import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
-import net.md_5.bungee.api.event.ServerConnectEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
+import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
 
 public class Queue implements Listener {
     private final Config config;
-    private final Deque<ProxiedPlayer> players;
+    private final Deque<ProxiedPlayer> playersQueue;
     private final Semaphore mutex = new Semaphore(1);
 
     /**
@@ -29,7 +28,7 @@ public class Queue implements Listener {
     public Queue(Config config) {
         this.config = config;
 
-        players = new LinkedList<>();
+        playersQueue = new LinkedList<>();
     }
 
     /**
@@ -37,14 +36,15 @@ public class Queue implements Listener {
      */
     public void flushQueue() {
         // Ignore if queue is empty
-        if (players.isEmpty())
+        if (playersQueue.isEmpty())
             return;
 
-        // Get status of target server
-        ServerInfo targetServer = ProxyServer.getInstance().getServerInfo(config.target);
+        // Get players of target server
+        Collection<ProxiedPlayer> playersMain = ProxyServer.getInstance().getServerInfo(config.target).getPlayers();
 
         ServerInfoGetter sig = new ServerInfoGetter();
-        ProxyServer.getInstance().getServerInfo(config.target).ping(sig);
+        //ProxyServer.getInstance().getServerInfo(config.target).ping(sig);
+        ProxyServer.getInstance().getServers().get(config.target).ping(sig);
 
         int slept = 0;
 
@@ -56,33 +56,33 @@ public class Queue implements Listener {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return;
         }
 
-        if (sig.players < config.maxPlayers) {
+        Main.log("flushQueue", "Players waiting: " + playersQueue.size() + " Player on the server: " + playersMain.size() + " " + sig.players + " " + sig.online);
+
+        if (sig.online && playersMain.size() < config.maxPlayers) {
             // Allow players onto the server
-            int allowance = Math.min(config.maxPlayers - sig.players, players.size());
+            int allowance = Math.min(config.maxPlayers - playersMain.size(), playersQueue.size());
 
             for (int i = 0; i < allowance; i++) {
                 try {
                     mutex.acquire();
-                    ProxiedPlayer p = players.getFirst();
+                    ProxiedPlayer player = playersQueue.getFirst();
 
                     Callback<Boolean> cb = (result, error) -> {
                         if (result) {
-                            Main.log("flushQueue", "§3Connected to target: " + p.toString() + " Waiting: "
-                                    + players.size() + " Server: " + sig.players);
-                            players.remove(p);
+                            Main.log("flushQueue", "§3Connected to target: " + player.toString() + " Waiting: " + playersQueue.size() + " Server: " + playersMain.size());
+                            playersQueue.remove(player);
                         } else {
-                            Main.log("flushQueue", "§3Connection to target failed (ban?): " + p.toString() + " "
-                                    + players.size() + " " + error.getMessage());
-                            p.sendMessage(TextComponent.fromLegacyText(
-                                    "§cConnection to " + config.target + " failed! Are you banned?"));
-                            players.remove(p);
-                            players.add(p);
+                            Main.log("flushQueue", "§3Connection to target failed (ban?): " + player.toString() + " " + playersQueue.size() + " " + error.getMessage());
+                            player.sendMessage(TextComponent.fromLegacyText("§cConnection to " + config.target + " failed!"));
+                            playersQueue.remove(player);
+                            playersQueue.add(player);
                         }
                     };
 
-                    p.connect(targetServer, cb);
+                    player.connect(ProxyServer.getInstance().getServerInfo(config.target), cb);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
@@ -100,7 +100,7 @@ public class Queue implements Listener {
 
         Deque<ProxiedPlayer> removePlayers = new LinkedList<>();
 
-        for (ProxiedPlayer player : players) {
+        for (ProxiedPlayer player : playersQueue) {
             Server playerServer = player.getServer();
 
             // Player is not connected OR Player Server is not connected OR Player Server is
@@ -111,18 +111,17 @@ public class Queue implements Listener {
             }
 
             player.sendMessage(
-                    TextComponent.fromLegacyText(config.message.replaceAll("%position%", Integer.toString(i))));
+                    TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(i)) + "§r"));
 
             i++;
         }
 
-        for (ProxiedPlayer p : removePlayers) {
+        for (ProxiedPlayer player : removePlayers) {
             try {
                 mutex.acquire();
-                players.remove(p);
+                playersQueue.remove(player);
 
-                Main.log("sendUpdate", "§3Removed from queue since on the wrong server or disconnected: " + p.toString()
-                        + " " + players.size());
+                Main.log("sendUpdate", "§3Removed from queue since on the wrong server or disconnected: " + player.toString() + " " + playersQueue.size());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
@@ -132,21 +131,20 @@ public class Queue implements Listener {
     }
 
     /**
-     * Add a ProxiedPlayer to the queue if they join the queue server
+     * This event is called once a connection to a server is fully operational.
+     * Add a Player to the queue if they join the queue server.
      */
     @EventHandler
-    public void onServerConnect(ServerConnectEvent e) {
-        if (e.getTarget().getName().equals(config.queue)) {
-            // Add ProxiedPlayer to queue
-            if (!players.contains(e.getPlayer())) {
+    public void onServerConnected(ServerConnectedEvent e) {
+        if (e.getServer().getInfo().getName().equals(config.queue)) {
+            // Add Player to queue
+            if (!playersQueue.contains(e.getPlayer())) {
                 try {
                     mutex.acquire();
-                    players.add(e.getPlayer());
-                    Main.log("onServerConnect",
-                            "§3Added to queue: " + e.getPlayer().toString() + " Waiting: " + players.size());
+                    playersQueue.add(e.getPlayer());
+                    Main.log("onServerConnect", "§3Added to queue: " + e.getPlayer().toString() + " Waiting: " + playersQueue.size());
 
-                    e.getPlayer().sendMessage(TextComponent.fromLegacyText(
-                            "§6" + config.message.replaceAll("%position%", Integer.toString(players.size()))));
+                    e.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(playersQueue.size())) + "§r"));
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -156,42 +154,69 @@ public class Queue implements Listener {
         }
     }
 
-//	/**
-//	 * When a player is kicked from the main server
-//	 */
-//	@EventHandler(priority = EventPriority.LOWEST)
-//	public void onKickedFromServer(ServerKickEvent e) {
-//		if (e.getKickedFrom().getName().equals(config.target)) {
-//			// Add ProxiedPlayer to queue
-//			if (!players.contains(e.getPlayer())) {
-//				try {
-//					mutex.acquire();
-//					players.add(e.getPlayer());
-//					Main.log("onKickedFromServer",
-//							"§3Added to queue after kick: " + e.getPlayer().toString() + " Waiting: " + players.size());
-//				} catch (InterruptedException e1) {
-//					e1.printStackTrace();
-//				} finally {
-//					mutex.release();
-//				}
-//			}
-//		}
-//	}
-
     /**
-     * Removes a ProxiedPlayer from the queue if they were in it
+     * Removes a Player from the queue if they were in it.
      */
     @EventHandler
-    public void onLeave(ServerDisconnectEvent e) {
+    public void onServerDisconnect(ServerDisconnectEvent e) {
         ProxiedPlayer player = e.getPlayer();
         Server playerNewServer = player.getServer();
 
-        if (!playerNewServer.getInfo().getName().equals(config.queue)) {
-            // Remove ProxiedPlayer from queue
+        if (playerNewServer != null && !playerNewServer.getInfo().getName().equals(config.queue)) {
+            // Remove Player from queue
             try {
                 mutex.acquire();
-                players.remove(player);
-                Main.log("onLeave", "§3Removed from queue: " + player.toString() + " Waiting: " + players.size());
+                playersQueue.remove(player);
+                Main.log("onLeave", "§3Removed from queue: " + player.toString() + " Waiting: " + playersQueue.size());
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            } finally {
+                mutex.release();
+            }
+        }
+    }
+
+    /**
+     * Called when deciding to connect to a server.
+     */
+    @EventHandler
+    public void onConnectEvent(ServerConnectEvent e) {
+        Main.log("onConnectEvent", e.getPlayer().getName() + " deciding to connect to " + e.getTarget().getName() + ".");
+    }
+
+    /**
+     * Called when a player has changed servers.
+     */
+    @EventHandler
+    public void onServerSwitch(ServerSwitchEvent e) {
+        Main.log("onServerSwitch", e.toString());
+
+        //Main.log("onServerSwitch", e.getPlayer().getName() + " switched from " + e.getFrom() == null ? "null" : e.getFrom().getName() + ".");
+    }
+
+    /**
+     * Server went down or player got kicked
+     */
+    @EventHandler
+    public void onServerKick(ServerKickEvent event) {
+        Main.log("onKickedFromServer", event.getPlayer().getName() + " kicked from " + event.getKickedFrom().getName() + ".");
+
+        if (event.getKickedFrom().getName().equals(config.target)) {
+            // Move Player back to the queue
+            try {
+                mutex.acquire();
+
+                ProxiedPlayer player = event.getPlayer();
+
+                event.setCancelled(true);
+                event.setCancelServer(ProxyServer.getInstance().getServerInfo(config.queue));
+
+                if (!playersQueue.contains(player)) {
+                    playersQueue.add(player);
+                }
+
+                player.sendMessage(TextComponent.fromLegacyText("§6You have been send back to the queue."));
+                Main.log("onKickedFromServer", "§3Added to queue after kick: " + player.toString() + " Waiting: " + playersQueue.size());
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {
@@ -203,8 +228,16 @@ public class Queue implements Listener {
     private static class ServerInfoGetter implements Callback<ServerPing> {
         public boolean done = false;
         public int players = Integer.MAX_VALUE;
+        public boolean online = false;
 
+        @Override
         public void done(ServerPing serverPing, Throwable throwable) {
+            if (throwable != null) {
+                // we had an error so we assume the server is offline
+                return;
+            }
+
+            online = true;
             players = serverPing.getPlayers().getOnline();
             done = true;
         }
