@@ -3,14 +3,17 @@ package org.zeroBzeroT.anarchyqueue;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
-import net.md_5.bungee.api.event.*;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
+import net.md_5.bungee.api.event.ServerConnectedEvent;
+import net.md_5.bungee.api.event.ServerDisconnectEvent;
+import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.Semaphore;
@@ -39,56 +42,40 @@ public class Queue implements Listener {
         if (playersQueue.isEmpty())
             return;
 
-        // Get players of target server
-        Collection<ProxiedPlayer> playersMain = ProxyServer.getInstance().getServerInfo(config.target).getPlayers();
+        // Get status of target server
+        ServerInfoGetter mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
 
-        ServerInfoGetter sig = new ServerInfoGetter();
-        //ProxyServer.getInstance().getServerInfo(config.target).ping(sig);
-        ProxyServer.getInstance().getServers().get(config.target).ping(sig);
+        // Allow players to join the main server
+        while (mainServerInfo.isOnline && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
+            try {
+                mutex.acquire();
 
-        int slept = 0;
+                ProxiedPlayer player = playersQueue.getFirst();
+                playersQueue.remove(player);
 
-        try {
-            while (!sig.done && slept < 10000) {
-                //noinspection BusyWait
-                Thread.sleep(100);
-                slept += 100;
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        Main.log("flushQueue", "Players waiting: " + playersQueue.size() + " Player on the server: " + playersMain.size() + " " + sig.players + " " + sig.online);
-
-        if (sig.online && playersMain.size() < config.maxPlayers) {
-            // Allow players onto the server
-            int allowance = Math.min(config.maxPlayers - playersMain.size(), playersQueue.size());
-
-            for (int i = 0; i < allowance; i++) {
-                try {
-                    mutex.acquire();
-                    ProxiedPlayer player = playersQueue.getFirst();
-
-                    Callback<Boolean> cb = (result, error) -> {
-                        if (result) {
-                            Main.log("flushQueue", "§3Connected to target: " + player.toString() + " Waiting: " + playersQueue.size() + " Server: " + playersMain.size());
-                            playersQueue.remove(player);
-                        } else {
-                            Main.log("flushQueue", "§3Connection to target failed (ban?): " + player.toString() + " " + playersQueue.size() + " " + error.getMessage());
-                            player.sendMessage(TextComponent.fromLegacyText("§cConnection to " + config.target + " failed!"));
-                            playersQueue.remove(player);
-                            playersQueue.add(player);
-                        }
-                    };
-
-                    player.connect(ProxyServer.getInstance().getServerInfo(config.target), cb);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    mutex.release();
+                if (!player.isConnected()) {
+                    continue;
                 }
+
+                Callback<Boolean> cb = (result, error) -> {
+                    if (result) {
+                        Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (ProxyServer.getInstance().getServerInfo(config.target).getPlayers().size() + 1) + ".");
+                    } else {
+                        Main.log("flushQueue", "§c" + player.toString() + "s connection to " + config.target + " failed: " + error.getMessage());
+                        player.sendMessage(TextComponent.fromLegacyText("§cConnection to the main server failed!"));
+                        playersQueue.add(player);
+                    }
+                };
+
+                player.connect(ProxyServer.getInstance().getServerInfo(config.target), cb);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                mutex.release();
             }
+
+            // Update status of target server
+            mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
         }
     }
 
@@ -103,25 +90,24 @@ public class Queue implements Listener {
         for (ProxiedPlayer player : playersQueue) {
             Server playerServer = player.getServer();
 
-            // Player is not connected OR Player Server is not connected OR Player Server is
-            // not the Queue Server
+            // Player is not connected OR Player Server is not the Queue Server
             if (!player.isConnected() || !playerServer.getInfo().getName().equals(config.queue)) {
                 removePlayers.add(player);
                 continue;
             }
 
-            player.sendMessage(
-                    TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(i)) + "§r"));
+            player.sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(i)) + "§r"));
 
             i++;
         }
 
         for (ProxiedPlayer player : removePlayers) {
             try {
+                // Remove Player from the queue
                 mutex.acquire();
                 playersQueue.remove(player);
 
-                Main.log("sendUpdate", "§3Removed from queue since on the wrong server or disconnected: " + player.toString() + " " + playersQueue.size());
+                Main.log("sendUpdate", "§3" + player.toString() + " was removed from " + config.queue + " (wrong server or disconnected). Queue count is " + playersQueue.size() + ".");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
@@ -135,16 +121,16 @@ public class Queue implements Listener {
      * Add a Player to the queue if they join the queue server.
      */
     @EventHandler
-    public void onServerConnected(ServerConnectedEvent e) {
-        if (e.getServer().getInfo().getName().equals(config.queue)) {
-            // Add Player to queue
-            if (!playersQueue.contains(e.getPlayer())) {
+    public void onServerConnected(ServerConnectedEvent event) {
+        if (event.getServer().getInfo().getName().equals(config.queue)) {
+            if (!playersQueue.contains(event.getPlayer())) {
+                // Add Player to queue
                 try {
                     mutex.acquire();
-                    playersQueue.add(e.getPlayer());
-                    Main.log("onServerConnect", "§3Added to queue: " + e.getPlayer().toString() + " Waiting: " + playersQueue.size());
+                    playersQueue.add(event.getPlayer());
+                    Main.log("onServerConnected", "§3" + event.getPlayer().toString() + " was added to queue. Queue count is " + playersQueue.size() + ".");
 
-                    e.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(playersQueue.size())) + "§r"));
+                    //event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(playersQueue.size())) + "§r"));
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -158,40 +144,44 @@ public class Queue implements Listener {
      * Removes a Player from the queue if they were in it.
      */
     @EventHandler
-    public void onServerDisconnect(ServerDisconnectEvent e) {
-        ProxiedPlayer player = e.getPlayer();
-        Server playerNewServer = player.getServer();
+    public void onServerDisconnect(ServerDisconnectEvent event) {
+        ProxiedPlayer player = event.getPlayer();
+        if (playersQueue.contains(player)) {
+            Server playerNewServer = player.getServer();
 
-        if (playerNewServer != null && !playerNewServer.getInfo().getName().equals(config.queue)) {
+            if (playerNewServer == null || (playerNewServer != null && !playerNewServer.getInfo().getName().equals(config.queue))) {
+                // Remove Player from queue
+                try {
+                    mutex.acquire();
+                    playersQueue.remove(player);
+                    Main.log("onServerDisconnect", "§3" + player.toString() + " was removed from queue. Queue count is " + playersQueue.size() + ".");
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                } finally {
+                    mutex.release();
+                }
+            }
+        }
+    }
+
+    /**
+     * Called when a player has left the proxy, it is not safe to call any methods
+     * that perform an action on the passed player instance.
+     */
+    @EventHandler
+    public void onPlayerDisconnect(PlayerDisconnectEvent event) {
+        if (playersQueue.contains(event.getPlayer())) {
             // Remove Player from queue
             try {
                 mutex.acquire();
-                playersQueue.remove(player);
-                Main.log("onLeave", "§3Removed from queue: " + player.toString() + " Waiting: " + playersQueue.size());
+                Main.log("onPlayerDisconnect", "§3" + event.getPlayer() + " was removed from queue. Queue count is " + playersQueue.size() + ".");
+                playersQueue.remove(event.getPlayer());
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {
                 mutex.release();
             }
         }
-    }
-
-    /**
-     * Called when deciding to connect to a server.
-     */
-    @EventHandler
-    public void onConnectEvent(ServerConnectEvent e) {
-        Main.log("onConnectEvent", e.getPlayer().getName() + " deciding to connect to " + e.getTarget().getName() + ".");
-    }
-
-    /**
-     * Called when a player has changed servers.
-     */
-    @EventHandler
-    public void onServerSwitch(ServerSwitchEvent e) {
-        Main.log("onServerSwitch", e.toString());
-
-        //Main.log("onServerSwitch", e.getPlayer().getName() + " switched from " + e.getFrom() == null ? "null" : e.getFrom().getName() + ".");
     }
 
     /**
@@ -199,24 +189,21 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerKick(ServerKickEvent event) {
-        Main.log("onKickedFromServer", event.getPlayer().getName() + " kicked from " + event.getKickedFrom().getName() + ".");
-
         if (event.getKickedFrom().getName().equals(config.target)) {
             // Move Player back to the queue
             try {
                 mutex.acquire();
+                String reason = BaseComponent.toLegacyText(event.getKickReasonComponent());
 
-                ProxiedPlayer player = event.getPlayer();
+                if (!reason.toLowerCase().contains("lost connection")) {
+                    ProxiedPlayer player = event.getPlayer();
 
-                event.setCancelled(true);
-                event.setCancelServer(ProxyServer.getInstance().getServerInfo(config.queue));
+                    event.setCancelled(true);
+                    event.setCancelServer(ProxyServer.getInstance().getServerInfo(config.queue));
 
-                if (!playersQueue.contains(player)) {
-                    playersQueue.add(player);
+                    player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason));
+                    Main.log("onServerKick", "§3" + player.toString() + " was added to queue after a kick (" + reason + "§3). Queue count is " + playersQueue.size() + ".");
                 }
-
-                player.sendMessage(TextComponent.fromLegacyText("§6You have been send back to the queue."));
-                Main.log("onKickedFromServer", "§3Added to queue after kick: " + player.toString() + " Waiting: " + playersQueue.size());
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {
@@ -225,10 +212,32 @@ public class Queue implements Listener {
         }
     }
 
+    /**
+     * Test a Server Connection
+     */
     private static class ServerInfoGetter implements Callback<ServerPing> {
         public boolean done = false;
-        public int players = Integer.MAX_VALUE;
-        public boolean online = false;
+        public int playerCount = Integer.MAX_VALUE;
+        public boolean isOnline = false;
+
+        public static ServerInfoGetter awaitServerInfo(String name) {
+            ServerInfoGetter sig = new ServerInfoGetter();
+            ProxyServer.getInstance().getServerInfo(name).ping(sig);
+
+            int slept = 0;
+
+            try {
+                while (!sig.done && slept < 10000) {
+                    //noinspection BusyWait
+                    Thread.sleep(100);
+                    slept += 100;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            return sig;
+        }
 
         @Override
         public void done(ServerPing serverPing, Throwable throwable) {
@@ -237,23 +246,9 @@ public class Queue implements Listener {
                 return;
             }
 
-            online = true;
-            players = serverPing.getPlayers().getOnline();
+            isOnline = true;
+            playerCount = serverPing.getPlayers().getOnline();
             done = true;
         }
     }
-
-//	/**
-//	 * Test a Server Connection
-//	 */
-//	private boolean isReachable(InetSocketAddress address) {
-//		Socket socket = new Socket();
-//		try {
-//			socket.connect(address, 500);
-//			socket.close();
-//			return true;
-//		} catch (IOException localIOException) {
-//		}
-//		return false;
-//	}
 }
