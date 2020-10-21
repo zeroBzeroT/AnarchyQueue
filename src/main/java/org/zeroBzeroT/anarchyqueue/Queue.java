@@ -42,8 +42,10 @@ public class Queue implements Listener {
         // Get status of target server
         ServerInfoGetter mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
 
+        int counter = 0;
+
         // Allow players to join the main server
-        while (mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
+        while (counter < 5 && mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
             try {
                 mutex.acquire();
 
@@ -76,13 +78,15 @@ public class Queue implements Listener {
             // Sleep a bit to prevent "Too many players are trying to connect" bug
             try {
                 //noinspection BusyWait
-                Thread.sleep(100);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             // Update status of target server
             mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
+
+            counter++;
         }
     }
 
