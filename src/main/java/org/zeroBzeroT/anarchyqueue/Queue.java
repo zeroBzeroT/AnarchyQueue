@@ -56,9 +56,11 @@ public class Queue implements Listener {
                     continue;
                 }
 
+                ServerInfoGetter finalMainServerInfo = mainServerInfo;
+
                 Callback<Boolean> cb = (result, error) -> {
                     if (result) {
-                        Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (ProxyServer.getInstance().getServerInfo(config.target).getPlayers().size() + 1) + " of " + Main.GLOBAL_SLOTS + ".");
+                        Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (finalMainServerInfo.playerCount + 1) + " of " + Main.GLOBAL_SLOTS + ".");
                     } else {
                         Main.log("flushQueue", "§c" + player.toString() + "s connection to " + config.target + " failed: " + error.getMessage());
                         player.sendMessage(TextComponent.fromLegacyText("§cConnection to " + config.serverName + " failed!§r"));
@@ -235,7 +237,7 @@ public class Queue implements Listener {
                 // direct connection
                 event.setTarget(ProxyServer.getInstance().getServerInfo(config.target));
 
-                Main.log("onServerConnect", "§3" + event.getPlayer() + " was directly connected to " + config.target + ".");
+                Main.log("onServerConnect", "§3" + event.getPlayer() + " was directly connected to " + config.target + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Main.GLOBAL_SLOTS + ".");
             } else {
                 // Send full message
                 event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.serverName + " is full or offline§r"));
