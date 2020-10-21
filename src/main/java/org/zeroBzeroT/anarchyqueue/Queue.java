@@ -7,10 +7,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.ServerConnectedEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
-import net.md_5.bungee.api.event.ServerKickEvent;
+import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
@@ -62,16 +59,26 @@ public class Queue implements Listener {
                         Main.log("flushQueue", "§3" + player.toString() + " connected to " + config.target + ". Queue count is " + playersQueue.size() + ". Main count is " + (ProxyServer.getInstance().getServerInfo(config.target).getPlayers().size() + 1) + " of " + Main.GLOBAL_SLOTS + ".");
                     } else {
                         Main.log("flushQueue", "§c" + player.toString() + "s connection to " + config.target + " failed: " + error.getMessage());
-                        player.sendMessage(TextComponent.fromLegacyText("§cConnection to the main server failed!"));
+                        player.sendMessage(TextComponent.fromLegacyText("§cConnection to " + config.serverName + " failed!§r"));
                         playersQueue.add(player);
                     }
                 };
+
+                player.sendMessage(TextComponent.fromLegacyText("§6" + config.messageConnecting + "§r"));
 
                 player.connect(ProxyServer.getInstance().getServerInfo(config.target), cb);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
                 mutex.release();
+            }
+
+            // Sleep a bit to prevent "Too many players are trying to connect" bug
+            try {
+                //noinspection BusyWait
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
             // Update status of target server
@@ -96,7 +103,7 @@ public class Queue implements Listener {
                 continue;
             }
 
-            player.sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(i)) + "§r"));
+            player.sendMessage(TextComponent.fromLegacyText("§6" + config.messagePosition.replaceAll("%position%", Integer.toString(i)) + "§r"));
 
             i++;
         }
@@ -129,8 +136,6 @@ public class Queue implements Listener {
                     mutex.acquire();
                     playersQueue.add(event.getPlayer());
                     Main.log("onServerConnected", "§3" + event.getPlayer().toString() + " was added to queue. Queue count is " + playersQueue.size() + ".");
-
-                    //event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.message.replaceAll("%position%", Integer.toString(playersQueue.size())) + "§r"));
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -149,7 +154,7 @@ public class Queue implements Listener {
         if (playersQueue.contains(player)) {
             Server playerNewServer = player.getServer();
 
-            if (playerNewServer == null || (playerNewServer != null && !playerNewServer.getInfo().getName().equals(config.queue))) {
+            if (playerNewServer == null || !playerNewServer.getInfo().getName().equals(config.queue)) {
                 // Remove Player from queue
                 try {
                     mutex.acquire();
@@ -160,6 +165,76 @@ public class Queue implements Listener {
                 } finally {
                     mutex.release();
                 }
+            }
+        }
+    }
+
+    /**
+     * Server went down or player got kicked
+     */
+    @EventHandler
+    public void onServerKick(ServerKickEvent event) {
+        // check if its a "fresh" connection
+        if (event.getPlayer().getServer() == null)
+            return;
+
+        if (event.getKickedFrom().getName().equals(config.target)) {
+            // Move Player back to the queue
+            try {
+                mutex.acquire();
+                String reason = BaseComponent.toLegacyText(event.getKickReasonComponent());
+                ProxiedPlayer player = event.getPlayer();
+
+                // lost connection -> disconnected
+                if (reason.toLowerCase().contains("banned")) {
+                    // if banned don't add back to the queue;
+                    player.disconnect(event.getKickReasonComponent());
+                } else if (!reason.toLowerCase().contains("lost connection")) {
+                    // add to the queue again since the player did not left the queue and the event is not triggered
+                    if (event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(config.queue)) {
+                        playersQueue.add(player);
+                        Main.log("onServerKick", "§3" + player.toString() + " was added to the queue. Queue count is " + playersQueue.size() + ".");
+                    }
+
+                    // cancel kick and send back to the queue
+                    event.setCancelled(true);
+                    event.setCancelServer(ProxyServer.getInstance().getServerInfo(config.queue));
+
+                    player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
+                    Main.log("onServerKick", "§3" + player.toString() + " was sent back to the queue after a kick (" + reason + "§3).");
+                }
+
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            } finally {
+                mutex.release();
+            }
+        }
+    }
+
+    /**
+     * Called when deciding to connect to a server. At the time when this event is called, no connection has actually been made. Cancelling the event will ensure that the connection does not proceed and can be useful to prevent certain players from accessing certain servers.
+     */
+    @EventHandler
+    public void onServerConnect(ServerConnectEvent event) {
+        // check if its a "fresh" connection
+        if (event.getPlayer().getServer() != null)
+            return;
+
+        // Direct connect to main server
+        if (playersQueue.size() == 0 && event.getTarget().equals(ProxyServer.getInstance().getServerInfo(config.queue))) {
+            // Get status of target server
+            ServerInfoGetter mainServerInfo = ServerInfoGetter.awaitServerInfo(config.target);
+
+            // main server is online and player count is lower then max
+            if (mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS) {
+                // direct connection
+                event.setTarget(ProxyServer.getInstance().getServerInfo(config.target));
+
+                Main.log("onServerConnect", "§3" + event.getPlayer() + " was directly connected to " + config.target + ".");
+            } else {
+                // Send full message
+                event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + config.serverName + " is full or offline§r"));
             }
         }
     }
@@ -176,34 +251,6 @@ public class Queue implements Listener {
                 mutex.acquire();
                 Main.log("onPlayerDisconnect", "§3" + event.getPlayer() + " was removed from queue. Queue count is " + playersQueue.size() + ".");
                 playersQueue.remove(event.getPlayer());
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            } finally {
-                mutex.release();
-            }
-        }
-    }
-
-    /**
-     * Server went down or player got kicked
-     */
-    @EventHandler
-    public void onServerKick(ServerKickEvent event) {
-        if (event.getKickedFrom().getName().equals(config.target)) {
-            // Move Player back to the queue
-            try {
-                mutex.acquire();
-                String reason = BaseComponent.toLegacyText(event.getKickReasonComponent());
-
-                if (!reason.toLowerCase().contains("lost connection")) {
-                    ProxiedPlayer player = event.getPlayer();
-
-                    event.setCancelled(true);
-                    event.setCancelServer(ProxyServer.getInstance().getServerInfo(config.queue));
-
-                    player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason));
-                    Main.log("onServerKick", "§3" + player.toString() + " was added to queue after a kick (" + reason + "§3). Queue count is " + playersQueue.size() + ".");
-                }
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {

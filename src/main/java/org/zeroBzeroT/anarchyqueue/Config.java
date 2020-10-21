@@ -11,8 +11,10 @@ import java.io.IOException;
 public class Config {
     public final String target = "main";
     public final String queue = "queue";
-    public final int maxPlayers = 10;
-    public final String message = "Position in queue: %position%";
+    public final int maxPlayers = 100;
+    public final String messagePosition = "Position in queue: \u00A7l%position%";
+    public final String messageConnecting = "Connecting to the server...";
+    public final String serverName = "0b0t";
 
     /**
      * Loads a config file, and if it doesn't exist creates one
@@ -46,7 +48,15 @@ public class Config {
             config.createNewFile();
             FileWriter fw = new FileWriter(config);
             fw.write(
-                    "{\n\"target\": \"main\",\n\"queue\": \"queue\",\n\"maxPlayers\": 80,\n\"message\": \"Position in queue: %position%\"\n}");
+                    "{\n" +
+                    "\"target\": \"main\",\n" +
+                    "\"queue\": \"queue\",\n" +
+                    "\"maxPlayers\": 80,\n" +
+                    "\"messagePosition\": \"Position in queue: \\u00A7%position%\",\n" +
+                    "\"messageConnecting\": \"Connecting to the server...\",\n" +
+                    "\"serverName\": \"0b0t\"\n" +
+                    "}"
+            );
             fw.close();
         } catch (IOException e) {
             e.printStackTrace();

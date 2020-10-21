@@ -42,9 +42,10 @@ public class Main extends Plugin {
         // Run queue flusher
         getProxy().getScheduler().schedule(this, queue::flushQueue, 1, 5, TimeUnit.SECONDS);
 
-        // Run updater
-        getProxy().getScheduler().schedule(this, queue::sendUpdate, 1, 15, TimeUnit.SECONDS);
+        // Run player notification
+        getProxy().getScheduler().schedule(this, queue::sendUpdate, 1, 10, TimeUnit.SECONDS);
 
-        log("onEnable", "§3Queue Message: " + config.message);
+        log("onEnable", "§3Queue Message: " + config.messagePosition);
+        log("onEnable", "§3Connecting Message: " + config.messageConnecting);
     }
 }
