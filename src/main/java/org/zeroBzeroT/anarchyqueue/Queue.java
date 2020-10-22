@@ -44,8 +44,8 @@ public class Queue implements Listener {
 
         int counter = 0;
 
-        // Allow players to join the main server
-        while (counter < 5 && mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS && Math.min(config.maxPlayers - mainServerInfo.playerCount, playersQueue.size()) > 0) {
+        // Allow players to join the main server - 3 x 1500ms (timeout + wait) = ~4500ms < 5000ms (interval)
+        while (counter < 3 && mainServerInfo.isOnline && mainServerInfo.playerCount < Main.GLOBAL_SLOTS && Math.min(Main.GLOBAL_SLOTS - mainServerInfo.playerCount, playersQueue.size()) > 0) {
             try {
                 mutex.acquire();
 
@@ -209,7 +209,6 @@ public class Queue implements Listener {
                     player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
                     Main.log("onServerKick", "§3" + player.toString() + " was sent back to the queue after a kick (" + reason + "§3).");
                 }
-
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             } finally {
@@ -280,7 +279,7 @@ public class Queue implements Listener {
             int slept = 0;
 
             try {
-                while (!sig.done && slept < 10000) {
+                while (!sig.done && slept < 1000) {
                     //noinspection BusyWait
                     Thread.sleep(100);
                     slept += 100;
