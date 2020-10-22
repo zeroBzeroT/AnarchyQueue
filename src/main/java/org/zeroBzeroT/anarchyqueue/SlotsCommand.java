@@ -11,24 +11,21 @@ import net.md_5.bungee.api.plugin.Command;
 public class SlotsCommand extends Command {
 
     public SlotsCommand() {
-        super("globalslots");
+        super("maxplayers");
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (sender != ProxyServer.getInstance().getConsole()) {
-            sender.sendMessage(new TextComponent("§cUnknown command"));
+            sender.sendMessage(new TextComponent("§cUnknown command§r"));
             return;
-        } else if (args.length < 1) {
-            sender.sendMessage(new TextComponent("§cCorrect command usage: /globalslots <int:current>"));
-            return;
-        } else if (args[0].equalsIgnoreCase("current")) {
-            sender.sendMessage(new TextComponent("§3Current max capacity: " + Main.GLOBAL_SLOTS));
+        } else if (args.length != 1) {
+            sender.sendMessage(new TextComponent("§3Current maximum player capacity is " + Config.maxPlayers + ".§r"));
             return;
         }
 
-        int integer = Integer.parseInt(args[0]);
-        sender.sendMessage(new TextComponent("§3New max capacity is: " + integer));
-        Main.GLOBAL_SLOTS = integer;
+        int maxPlayers = Integer.parseInt(args[0]);
+        sender.sendMessage(new TextComponent("§3Changed maximum player capacity to " + maxPlayers + ".§r"));
+        Config.maxPlayers = maxPlayers;
     }
 }

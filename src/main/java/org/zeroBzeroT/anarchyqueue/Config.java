@@ -1,65 +1,61 @@
 package org.zeroBzeroT.anarchyqueue;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
+import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.Arrays;
 
+@SuppressWarnings("CanBeFinal")
 public class Config {
-    public final String target = "main";
-    public final String queue = "queue";
-    public final int maxPlayers = 100;
-    public final String messagePosition = "Position in queue: \u00A7l%position%";
-    public final String messageConnecting = "Connecting to the server...";
-    public final String serverName = "0b0t";
+    public static String target = null;
+    public static String queue = null;
+    public static int maxPlayers = 0;
+    public static String messagePosition = null;
+    public static String messageConnecting = null;
+    public static String serverName = null;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
      *
-     * @param filepath filepath of the config
+     * @param plugin Bungeecord plugin
      */
-    static Config getConfig(String filepath) {
-        Gson gson = new Gson();
+    static void getConfig(Plugin plugin) throws Exception {
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
 
-        try {
-            FileReader fr = new FileReader(filepath);
-            return gson.fromJson(fr, Config.class);
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            genConfig(filepath);
+        if (configFile.exists()) {
+            loadConfig(configFile);
+        } else {
+            try {
+                InputStream in = plugin.getResourceAsStream("config.yml");
+                Files.copy(in, configFile.toPath());
+                loadConfig(configFile);
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
         }
-
-        return new Config();
     }
 
     /**
-     * Create a new config
+     * Load the config from the plugin data folder
      *
-     * @param filepath filepath of the config
+     * @param configFile Path to the configuration file
      */
-    static void genConfig(String filepath) {
-        File config = new File(filepath);
-        try {
-            //noinspection ResultOfMethodCallIgnored
-            config.createNewFile();
-            FileWriter fw = new FileWriter(config);
-            fw.write(
-                    "{\n" +
-                    "\"target\": \"main\",\n" +
-                    "\"queue\": \"queue\",\n" +
-                    "\"maxPlayers\": 80,\n" +
-                    "\"messagePosition\": \"Position in queue: \\u00A7%position%\",\n" +
-                    "\"messageConnecting\": \"Connecting to the server...\",\n" +
-                    "\"serverName\": \"0b0t\"\n" +
-                    "}"
-            );
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    static void loadConfig(File configFile) throws IOException {
+        Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+
+        Arrays.asList(Config.class.getDeclaredFields()).forEach(field -> {
+            try {
+                field.setAccessible(true);
+                field.set(Config.class, config.get(field.getName()));
+            } catch (SecurityException | IllegalArgumentException | IllegalAccessException exception) {
+                exception.printStackTrace();
+            }
+        });
     }
 }

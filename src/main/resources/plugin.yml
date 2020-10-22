@@ -1,5 +1,5 @@
 name: AnarchyQueue
 main: org.zeroBzeroT.anarchyqueue.Main
 version: ${project.version}
-author: slomo
-description: bungeecoord queue system like on some anarchy servers
+author: bierdosenhalter
+description: bungeecoord queue for anarchy servers
