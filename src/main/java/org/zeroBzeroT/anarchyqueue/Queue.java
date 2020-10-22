@@ -49,9 +49,9 @@ public class Queue implements Listener {
                 if (player.isConnected()) {
                     Callback<Boolean> cb = (result, error) -> {
                         if (result) {
-                            Main.log("flushQueue", "§3§l" + player.toString() + "§3 connected to §l" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                            Main.log("flushQueue", "§3§b" + player.toString() + "§3 connected to §b" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
                         } else {
-                            Main.log("flushQueue", "§c§l" + player.toString() + "s§c connection to §l" + Config.target + "§c failed: " + error.getMessage());
+                            Main.log("flushQueue", "§c§b" + player.toString() + "s§c connection to §b" + Config.target + "§c failed: " + error.getMessage());
                             player.sendMessage(TextComponent.fromLegacyText("§cConnection to " + Config.serverName + " failed!§r"));
                             playersQueue.add(player);
                         }
@@ -97,7 +97,7 @@ public class Queue implements Listener {
                 mutex.acquire();
                 playersQueue.remove(player);
 
-                Main.log("sendUpdate", "§3§l" + player.toString() + "§3 was removed from §l" + Config.queue + "§3 (wrong server or disconnected). Queue count is " + playersQueue.size() + ".");
+                Main.log("sendUpdate", "§3§b" + player.toString() + "§3 was removed from §b" + Config.queue + "§3 (wrong server or disconnected). Queue count is " + playersQueue.size() + ".");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
@@ -118,7 +118,7 @@ public class Queue implements Listener {
                 try {
                     mutex.acquire();
                     playersQueue.add(event.getPlayer());
-                    Main.log("onServerConnected", "§3§l" + event.getPlayer().toString() + "§3 was added to §l" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
+                    Main.log("onServerConnected", "§3§b" + event.getPlayer().toString() + "§3 was added to §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -142,7 +142,7 @@ public class Queue implements Listener {
                 try {
                     mutex.acquire();
                     playersQueue.remove(player);
-                    Main.log("onServerDisconnect", "§3§l" + player.toString() + "§3 was removed from §l" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
+                    Main.log("onServerDisconnect", "§3§b" + player.toString() + "§3 was removed from §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -176,7 +176,7 @@ public class Queue implements Listener {
                     // add to the queue again since the player did not left the queue and the event is not triggered
                     if (event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)) {
                         playersQueue.add(player);
-                        Main.log("onServerKick", "§3§l" + player.toString() + "§3 was added to the §l" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
+                        Main.log("onServerKick", "§3§b" + player.toString() + "§3 was added to the §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
                     }
 
                     // cancel kick and send back to the queue
@@ -184,7 +184,7 @@ public class Queue implements Listener {
                     event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));
 
                     player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
-                    Main.log("onServerKick", "§3§l" + player.toString() + "§3 was sent back to §l" + Config.queue + "§3 after a kick (" + reason + "§3).");
+                    Main.log("onServerKick", "§3§b" + player.toString() + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3).");
                 }
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
@@ -213,7 +213,7 @@ public class Queue implements Listener {
                 // direct connection
                 event.setTarget(ProxyServer.getInstance().getServerInfo(Config.target));
 
-                Main.log("onServerConnect", "§3§l" + event.getPlayer() + "§3 was directly connected to §l" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                Main.log("onServerConnect", "§3§b" + event.getPlayer() + "§3 was directly connected to §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
             } else {
                 // Send full message
                 event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + Config.serverName + " is full or offline§r"));
@@ -231,7 +231,7 @@ public class Queue implements Listener {
             // Remove Player from queue
             try {
                 mutex.acquire();
-                Main.log("onPlayerDisconnect", "§3§l" + event.getPlayer() + "§3 was removed from §l" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
+                Main.log("onPlayerDisconnect", "§3§b" + event.getPlayer() + "§3 was removed from §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
                 playersQueue.remove(event.getPlayer());
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
