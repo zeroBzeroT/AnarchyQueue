@@ -19,6 +19,7 @@ public class Config {
     public static String messagePosition = null;
     public static String messageConnecting = null;
     public static String serverName = null;
+    public static int waitOnKick = 0;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
