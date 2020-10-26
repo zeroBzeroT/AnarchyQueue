@@ -2,7 +2,7 @@
 target: "main"
 queue: "queue"
 maxPlayers: 123
-waitOnKick: 5
+waitOnKick: 15
 messagePosition: "&6Position in queue: &l%position%"
 messageConnecting: "&6Connecting to the server..."
 serverName: "0b0t"

@@ -6,6 +6,7 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.*;
@@ -32,17 +33,25 @@ public class Queue implements Listener {
 
         Main.getInstance().getProxy().getScheduler().schedule(Main.getInstance(), () -> {
             Set<Entry<ProxiedPlayer, Long>> entrySet = kickedPlayers.entrySet();
-            Iterator<Entry<ProxiedPlayer, Long>> iterator = entrySet.iterator();
-
-            while (iterator.hasNext()) {
-                Map.Entry<ProxiedPlayer, Long> pair = iterator.next();
-
-                if (pair.getValue() + Config.waitOnKick < Instant.now().getEpochSecond()) {
-                    iterator.remove();
-                }
-            }
-
+            entrySet.removeIf(pair -> pair.getValue() + Config.waitOnKick < Instant.now().getEpochSecond());
         }, 0, 1, TimeUnit.SECONDS);
+    }
+
+    /**
+     * check if a specific player is not connected to a server
+     *
+     * @param player the player whose uuid is checked against the players on the server
+     * @param server the server that should be checked if the player is online
+     * @return true if the player is not connected
+     */
+    private static boolean isNotConnected(ProxiedPlayer player, ServerInfo server) {
+        for (ProxiedPlayer serverPlayer : server.getPlayers()) {
+            if (player.getUniqueId().equals(serverPlayer.getUniqueId())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -78,20 +87,25 @@ public class Queue implements Listener {
 
                 if (player.isConnected()) {
                     ProxiedPlayer finalPlayer = player;
+                    ServerInfo targetServer = ProxyServer.getInstance().getServerInfo(Config.target);
 
-                    Callback<Boolean> cb = (result, error) -> {
-                        if (result) {
-                            Main.log("flushQueue", "§3§b" + finalPlayer.toString() + "§3 connected to §b" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
-                        } else {
-                            Main.log("flushQueue", "§c§b" + finalPlayer.toString() + "s§c connection to §b" + Config.target + "§c failed: " + error.getMessage());
-                            finalPlayer.sendMessage(TextComponent.fromLegacyText("§cConnection to " + Config.serverName + " failed!§r"));
-                            playersQueue.add(finalPlayer);
-                        }
-                    };
+                    if (isNotConnected(player, targetServer)) {
+                        Callback<Boolean> cb = (result, error) -> {
+                            if (result) {
+                                Main.log("flushQueue", "§3§b" + finalPlayer.toString() + "§3 connected to §b" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                            } else {
+                                Main.log("flushQueue", "§c§b" + finalPlayer.toString() + "s§c connection to §b" + Config.target + "§c failed: " + error.getMessage());
+                                finalPlayer.sendMessage(TextComponent.fromLegacyText("§cConnection to " + Config.serverName + " failed!§r"));
+                                playersQueue.add(finalPlayer);
+                            }
+                        };
 
-                    player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', Config.messageConnecting) + "§r"));
-
-                    player.connect(ProxyServer.getInstance().getServerInfo(Config.target), cb);
+                        player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', Config.messageConnecting) + "§r"));
+                        player.connect(targetServer, cb);
+                    } else {
+                        player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
+                        Main.log("flushQueue", "§c§b" + player.toString() + "§c was disconnected because there was already a connection for this account to the server.");
+                    }
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -233,8 +247,10 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerConnect(ServerConnectEvent event) {
+        ProxiedPlayer player = event.getPlayer();
+
         // check if its a "fresh" connection
-        if (event.getPlayer().getServer() != null)
+        if (player.getServer() != null)
             return;
 
         // Direct connect to main server
@@ -244,10 +260,16 @@ public class Queue implements Listener {
 
             // main server is online and player count is lower then max
             if (mainServerInfo.isOnline && mainServerInfo.playerCount < Config.maxPlayers) {
-                // direct connection
-                event.setTarget(ProxyServer.getInstance().getServerInfo(Config.target));
+                ServerInfo targetServer = ProxyServer.getInstance().getServerInfo(Config.target);
 
-                Main.log("onServerConnect", "§3§b" + event.getPlayer() + "§3 was directly connected to §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                if (isNotConnected(player, targetServer)) {
+                    // direct connection
+                    event.setTarget(targetServer);
+                    Main.log("onServerConnect", "§3§b" + event.getPlayer() + "§3 was directly connected to §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                } else {
+                    player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
+                    Main.log("onServerConnect", "§c§b" + player.toString() + "§c was disconnected because there was already a connection for this account to the server.");
+                }
             } else {
                 // Send full message
                 event.getPlayer().sendMessage(TextComponent.fromLegacyText("§6" + Config.serverName + " is full or offline§r"));
