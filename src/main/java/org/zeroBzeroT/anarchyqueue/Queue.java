@@ -225,14 +225,19 @@ public class Queue implements Listener {
                         Main.log("onServerKick", "§3§b" + player.toString() + "§3 was added to the §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ". Kicked count is " + (kickedPlayers.size() + 1) + ".");
                     }
 
-                    // cancel kick and send back to the queue
-                    event.setCancelled(true);
-                    event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));
+                    // if config is not set to kick or if the server was kicked while connecting
+                    if(!Config.kick || event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)) {
+                        // cancel kick and send back to the queue
+                        event.setCancelled(true);
+                        event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));
 
-                    player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
-                    Main.log("onServerKick", "§3§b" + player.toString() + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3). Kicked count is " + (kickedPlayers.size() + 1) + ".");
+                        player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
+                        Main.log("onServerKick", "§3§b" + player.toString() + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3). Kicked count is " + (kickedPlayers.size() + 1) + ".");
 
-                    kickedPlayers.put(player, Instant.now().getEpochSecond());
+                        kickedPlayers.put(player, Instant.now().getEpochSecond());
+                    }
+
+                    // if the event was not cancelled the player gets kicked
                 }
             } catch (InterruptedException e1) {
                 e1.printStackTrace();

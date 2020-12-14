@@ -20,6 +20,7 @@ public class Config {
     public static String messageConnecting = null;
     public static String serverName = null;
     public static int waitOnKick = 0;
+    public static boolean kick = true;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
