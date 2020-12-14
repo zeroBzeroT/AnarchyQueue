@@ -236,8 +236,10 @@ public class Queue implements Listener {
 
                         kickedPlayers.put(player, Instant.now().getEpochSecond());
                     }
-
-                    // if the event was not cancelled the player gets kicked
+                    else {
+                        // kick the player if the event was not cancelled
+                        Main.log("onServerKick", "§3§b" + player.toString() + "§3 was kicked for " + reason + "§3.");
+                    }
                 }
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
