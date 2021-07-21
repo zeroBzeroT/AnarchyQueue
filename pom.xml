@@ -8,12 +8,12 @@
   <artifactId>AnarchyQueue</artifactId>
   <version>1.5</version>
   <packaging>jar</packaging>
+  <name>${project.artifactId}</name>
 
-  <name>AnarchyQueue</name>
-
-  <description>des</description>
   <properties>
     <java.version>1.8</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -56,7 +56,7 @@
 
   <repositories>
     <repository>
-      <id>sonatype</id>
+      <id>sonatype snapshots</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
   </repositories>
