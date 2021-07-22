@@ -1,8 +1,8 @@
 # AnarchyQueue V${project.version}
 target: "main"
 queue: "queue"
-maxPlayers: 123
-waitOnKick: 15
+maxPlayers: 420
+waitOnKick: 16
 messagePosition: "&6Position in queue: &l%position%"
 messageConnecting: "&6Connecting to the server..."
 serverName: "0b0t"
