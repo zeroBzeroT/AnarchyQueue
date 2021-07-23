@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 
 @Plugin(
-    id = "AnarchyQueue",
+    id = "anarchyqueue",
     name = "AnarchyQueue",
     version = "2.0.0-SNAPSHOT",
     description = "velocity queue system for anarchy servers",
