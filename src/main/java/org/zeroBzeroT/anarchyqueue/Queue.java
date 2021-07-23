@@ -73,9 +73,10 @@ public class Queue {
         if (queuedPlayers.size() == 0) return;
         // connect next player
         UUID uuid = queuedPlayers.remove(0).getUniqueId();
-        // lookup player from queue server to be safe the player is connected
+        // lookup player from queue server and ping to be safe the player is connected
         serverQueue.getPlayersConnected().stream()
             .filter(p -> p.getUniqueId().equals(uuid))
+            .filter(p -> p.getPing() != -1)
             .findAny().ifPresent(p -> p.createConnectionRequest(serverMain));
     }
 
