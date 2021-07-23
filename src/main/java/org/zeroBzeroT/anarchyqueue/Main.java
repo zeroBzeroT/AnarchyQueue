@@ -33,11 +33,6 @@ public class Main {
         this.server = server;
         this.log = logger;
         this.dataDir = dataDir;
-        try {
-            Config.loadConfig(dataDir);
-        } catch (IOException e) {
-            logger.warn(e.getMessage());
-        }
         instance = this;
     }
 
@@ -49,6 +44,7 @@ public class Main {
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
 
+        // Load config
         try {
             Config.loadConfig(dataDir);
         } catch (Exception e) {
@@ -57,18 +53,18 @@ public class Main {
             return;
         }
 
+        // Register queue
         Queue queue = new Queue(server);
-
         server.getEventManager().register(this, queue);
 
-        // Run queue flusher
+        // Schedule queue flusher
         server.getScheduler()
             .buildTask(this, queue::flushQueue)
             .delay(Duration.ofSeconds(1))
             .repeat(Duration.ofSeconds(2))
             .schedule();
 
-        // Run player notification
+        // Schedule player notification
         server.getScheduler()
             .buildTask(this, queue::sendUpdate)
             .delay(Duration.ofSeconds(1))
