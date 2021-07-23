@@ -24,8 +24,10 @@ import java.time.Duration;
 public class Main {
 
     private static Main instance;
-    public final ProxyServer server;
+
     public final Logger log;
+
+    private final ProxyServer server;
     private final Path dataDir;
 
     @Inject
@@ -43,7 +45,6 @@ public class Main {
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
-
         // Load config
         try {
             Config.loadConfig(dataDir);
@@ -52,14 +53,9 @@ public class Main {
             server.shutdown();
             return;
         }
-
         // Register queue
         Queue queue = new Queue(server);
         server.getEventManager().register(this, queue);
-
-        log.info("Position Message: " + Config.messagePosition);
-        log.info("Connecting Message: " + Config.messageConnecting);
-
     }
 
 }

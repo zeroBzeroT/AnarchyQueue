@@ -5,6 +5,7 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.List;
@@ -14,15 +15,17 @@ import java.util.concurrent.ExecutionException;
 
 public class Queue {
 
+    private final Logger log;
     private final ProxyServer proxyServer;
+
     /**
-     * We dont use ConcurrentLinkedQueue  for this because we want index based access to players.
+     * We dont use ConcurrentLinkedQueue for this because we want index based access to players.
      */
     private final List<Player> queuedPlayers = new CopyOnWriteArrayList<>();
 
     public Queue(ProxyServer proxyServer) {
+        this.log = Main.getInstance().log;
         this.proxyServer = proxyServer;
-
         // process queue
         proxyServer.getScheduler()
             .buildTask(Main.getInstance(), this::process)
@@ -43,13 +46,13 @@ public class Queue {
             serverMain = getServer(Config.serverMain);
             serverQueue = getServer(Config.serverQueue);
         } catch (ServerNotReachableException e) {
-            Main.getInstance().log.warn(e.getMessage());
+            log.warn(e.getMessage());
             return;
         }
         // check current player counts
         int onlinePlayersMain = serverMain.getPlayersConnected().size();
         int onlinePlayersQueue = serverQueue.getPlayersConnected().size();
-        Main.getInstance().log.info("Online players: main " + onlinePlayersMain + " / queue " + onlinePlayersQueue);
+        log.info("Online players: main " + onlinePlayersMain + " / queue " + onlinePlayersQueue);
         // TODO: send notifications to players every seconds % 10 == 0
         // TODO: check for maximum connected players
         // get next player to move to main server
