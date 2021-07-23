@@ -51,6 +51,19 @@ public class Queue {
     }
 
     public void flushQueue() {
+        Optional<RegisteredServer> serverMain = proxyServer.getServer(Config.serverMain);
+        Optional<RegisteredServer> serverQueue = proxyServer.getServer(Config.serverQueue);
+        if (!serverMain.isPresent()) {
+            Main.getInstance().log.warn("Main server " + Config.serverMain + " is not connected!");
+            return;
+        }
+        if (!serverQueue.isPresent()) {
+            Main.getInstance().log.warn("Queue server " + Config.serverQueue + " is not connected!");
+            return;
+        }
+        int onlinePlayersMain = serverMain.get().getPlayersConnected().size();
+        int onlinePlayersQueue = serverQueue.get().getPlayersConnected().size();
+        Main.getInstance().log.info("Online player: main " + onlinePlayersMain + " / queue" + onlinePlayersQueue);
     }
 
     public void sendUpdate() {

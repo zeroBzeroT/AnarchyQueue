@@ -10,8 +10,8 @@ import java.nio.file.Path;
 
 public class Config {
 
-    public static String target = null;
-    public static String queue = null;
+    public static String serverMain = null;
+    public static String serverQueue = null;
     public static int maxPlayers = 0;
     public static String messagePosition = null;
     public static String messageConnecting = null;
@@ -46,13 +46,13 @@ public class Config {
         }
 
         Toml toml = new Toml().read(file);
-        target = toml.getString("target", "main");
-        queue = toml.getString("queue", "queue");
-        maxPlayers = toml.getLong("maxPlayers", 420L).intValue();
-        waitOnKick = toml.getLong("waitOnKick", 16L).intValue();
-        messagePosition = toml.getString("messagePosition", "&6Position in queue: &l%position%");
-        messageConnecting = toml.getString("messageConnecting", "&6Connecting to the server...");
-        serverName = toml.getString("serverName", "0b0t");
+        serverMain = toml.getString("server-main", "main");
+        serverQueue = toml.getString("server-queue", "queue");
+        maxPlayers = toml.getLong("max-players", 420L).intValue();
+        waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
+        messagePosition = toml.getString("message-position", "&6Position in queue: &l%position%");
+        messageConnecting = toml.getString("message-connecting", "&6Connecting to the server...");
+        serverName = toml.getString("server-name", "0b0t");
         kick = toml.getBoolean("kick", true);
 
     }
