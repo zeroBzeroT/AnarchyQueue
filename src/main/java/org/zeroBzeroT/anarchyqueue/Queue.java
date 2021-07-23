@@ -1,52 +1,42 @@
 package org.zeroBzeroT.anarchyqueue;
 
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class Queue {
 
     private final ProxyServer proxyServer;
-    private final BlockingQueue<UUID> queuedPlayers;
+    /**
+     * We dont use ConcurrentLinkedQueue  for this because we want index based access to players.
+     */
+    private final List<Player> queuedPlayers = new CopyOnWriteArrayList<>();
 
     public Queue(ProxyServer proxyServer) {
         this.proxyServer = proxyServer;
-        this.queuedPlayers = new LinkedBlockingDeque<>();
 
-        // Schedule queue flusher
+        // process queue
         proxyServer.getScheduler()
-            .buildTask(Main.getInstance(), this::flushQueue)
+            .buildTask(Main.getInstance(), this::process)
             .delay(Duration.ofSeconds(1))
             .repeat(Duration.ofSeconds(2))
             .schedule();
-
-        // Schedule player notification
-        proxyServer.getScheduler()
-            .buildTask(Main.getInstance(), this::sendUpdate)
-            .delay(Duration.ofSeconds(1))
-            .repeat(Duration.ofSeconds(10))
-            .schedule();
-
     }
 
     @Subscribe
     public void onPlayerChooseInitialServer(PlayerChooseInitialServerEvent e) {
-        queuedPlayers.add(e.getPlayer().getUniqueId());
+        queuedPlayers.add(e.getPlayer());
     }
 
-    public void flushQueue() {
+    public void process() {
         final RegisteredServer serverMain;
         final RegisteredServer serverQueue;
         try {
@@ -60,17 +50,12 @@ public class Queue {
         int onlinePlayersMain = serverMain.getPlayersConnected().size();
         int onlinePlayersQueue = serverQueue.getPlayersConnected().size();
         Main.getInstance().log.info("Online players: main " + onlinePlayersMain + " / queue " + onlinePlayersQueue);
+        // TODO: send notifications to players every seconds % 10 == 0
+        // TODO: check for maximum connected players
         // get next player to move to main server
-        UUID uuid;
-        try {
-            uuid = queuedPlayers.poll(1, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Main.getInstance().log.warn(e.getMessage());
-            return;
-        }
-        Optional<Player> playerOpt = serverQueue.getPlayersConnected().stream().filter(p -> p.getUniqueId().equals(uuid)).findAny();
-        // connect if player is found
-        playerOpt.ifPresent(player -> player.createConnectionRequest(serverMain));
+        if (queuedPlayers.size() == 0) return;
+        Player player = queuedPlayers.get(0);
+        player.createConnectionRequest(serverMain);
     }
 
     private RegisteredServer getServer(String serverName) throws ServerNotReachableException {
@@ -87,9 +72,6 @@ public class Queue {
             throw new ServerNotReachableException("Server " + serverName + " is not reachable: " + e.getMessage());
         }
         return serverQueue;
-    }
-
-    public void sendUpdate() {
     }
 
 }
