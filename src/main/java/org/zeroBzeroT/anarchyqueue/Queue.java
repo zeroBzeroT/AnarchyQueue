@@ -64,7 +64,7 @@ public class Queue {
             return;
         }
         // check main server full
-        boolean full = serverMain.getPlayersConnected().size() > 200;
+        boolean full = serverMain.getPlayersConnected().size() >= Config.maxPlayers;
         // send infos every 10 seconds
         if (Instant.now().getEpochSecond() % 10 == 0) {
             sendInfos(serverQueue, full);
@@ -77,7 +77,10 @@ public class Queue {
         serverQueue.getPlayersConnected().stream()
             .filter(p -> p.getUniqueId().equals(uuid))
             .filter(p -> p.getPing() != -1)
-            .findAny().ifPresent(p -> p.createConnectionRequest(serverMain));
+            .findAny().ifPresent(p -> {
+            p.sendMessage(TextComponent.of(Config.messageConnecting).color(TextColor.DARK_AQUA));
+            p.createConnectionRequest(serverMain);
+        });
     }
 
     private void sendInfos(RegisteredServer serverQueue, boolean full) {
@@ -85,13 +88,13 @@ public class Queue {
             queuedPlayers
                 .get(i)
                 .sendMessage(TextComponent.of(
-                    "Position in queue: " + i + "/" + queuedPlayers.size()
+                    Config.messagePosition + i + "/" + queuedPlayers.size()
                 ).color(TextColor.DARK_AQUA));
         }
         if (full) {
             serverQueue.getPlayersConnected().forEach(queuedPlayer ->
                 queuedPlayer.sendMessage(TextComponent.of(
-                    "Server is currently full!"
+                    Config.messageFull
                 ).color(TextColor.DARK_AQUA)));
         }
     }

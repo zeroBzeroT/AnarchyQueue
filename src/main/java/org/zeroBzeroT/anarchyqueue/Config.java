@@ -15,6 +15,8 @@ public class Config {
     public static int maxPlayers = 0;
     public static String messagePosition = null;
     public static String messageConnecting = null;
+    public static String messageFull = null;
+    public static String messageDown = null;
     public static String serverName = null;
     public static int waitOnKick = 0;
     public static boolean kick = true;
@@ -50,8 +52,10 @@ public class Config {
         serverQueue = toml.getString("server-queue", "queue");
         maxPlayers = toml.getLong("max-players", 420L).intValue();
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
-        messagePosition = toml.getString("message-position", "&6Position in queue: &l%position%");
-        messageConnecting = toml.getString("message-connecting", "&6Connecting to the server...");
+        messagePosition = toml.getString("message-position", "Position in queue: ");
+        messageConnecting = toml.getString("message-connecting", "Connecting to the server...");
+        messageFull = toml.getString("message-full", "Server is currently full!");
+        messageDown = toml.getString("message-down", "Server is currently down!");
         serverName = toml.getString("server-name", "0b0t");
         kick = toml.getBoolean("kick", true);
 
