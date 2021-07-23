@@ -1,31 +1,34 @@
 package org.zeroBzeroT.anarchyqueue;
 
-import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.plugin.Command;
+import com.velocitypowered.api.command.Command;
+import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.proxy.ConsoleCommandSource;
+import net.kyori.text.format.TextColor;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * SlotsCommand
  */
-public class SlotsCommand extends Command {
-
-    public SlotsCommand() {
-        super("maxplayers");
-    }
+public class SlotsCommand implements Command {
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
-        if (sender != ProxyServer.getInstance().getConsole()) {
-            sender.sendMessage(new TextComponent("§cUnknown command§r"));
+    public void execute(@NonNull CommandSource source, String[] args) {
+
+        if (!(source instanceof ConsoleCommandSource)) {
+            source.sendMessage(net.kyori.text.TextComponent.of("Unknown command").color(TextColor.RED));
             return;
-        } else if (args.length != 1) {
-            sender.sendMessage(new TextComponent("§3Current maximum player capacity is " + Config.maxPlayers + ".§r"));
+        }
+
+        if (args.length != 1) {
+            source.sendMessage(net.kyori.text.TextComponent.of("Current maximum player capacity is " + Config.maxPlayers).color(TextColor.DARK_AQUA));
             return;
         }
 
         int maxPlayers = Integer.parseInt(args[0]);
-        sender.sendMessage(new TextComponent("§3Changed maximum player capacity to " + maxPlayers + ".§r"));
+
+        source.sendMessage(net.kyori.text.TextComponent.of("Changed maximum player capacity to " + maxPlayers).color(TextColor.DARK_AQUA));
         Config.maxPlayers = maxPlayers;
+
     }
+
 }
