@@ -97,7 +97,7 @@ public class Queue {
             queuedPlayers
                 .get(i)
                 .sendMessage(Identity.nil(), Component.text(
-                    Config.messagePosition + i + 1 + "/" + queuedPlayers.size()
+                    Config.messagePosition + (i + 1) + "/" + queuedPlayers.size()
                 ));
         }
         if (full) {
