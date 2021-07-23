@@ -20,12 +20,10 @@ public class Queue {
 
     private final ProxyServer proxyServer;
     private final BlockingQueue<UUID> queuedPlayers;
-    private final Map<UUID, Instant> kickedPlayers;
 
     public Queue(ProxyServer proxyServer) {
         this.proxyServer = proxyServer;
         this.queuedPlayers = new LinkedBlockingDeque<>();
-        this.kickedPlayers = new ConcurrentHashMap<>();
 
         // Schedule queue flusher
         proxyServer.getScheduler()
@@ -46,11 +44,6 @@ public class Queue {
     @Subscribe
     public void onPlayerChooseInitialServer(PlayerChooseInitialServerEvent e) {
         queuedPlayers.add(e.getPlayer().getUniqueId());
-    }
-
-    @Subscribe
-    public void onKickedFromServer(KickedFromServerEvent e) {
-        kickedPlayers.put(e.getPlayer().getUniqueId(), Instant.now());
     }
 
     public void flushQueue() {
@@ -76,10 +69,6 @@ public class Queue {
             return;
         }
         Optional<Player> playerOpt = serverQueue.getPlayersConnected().stream().filter(p -> p.getUniqueId().equals(uuid)).findAny();
-        // skip if player was kicked recently
-        if (kickedPlayers.containsKey(uuid) &&
-            kickedPlayers.get(uuid).plus(1, ChronoUnit.MINUTES).isBefore(Instant.now()))
-            return;
         // connect if player is found
         playerOpt.ifPresent(player -> player.createConnectionRequest(serverMain));
     }
@@ -101,9 +90,6 @@ public class Queue {
     }
 
     public void sendUpdate() {
-    }
-
-    public void processKicked() {
     }
 
 }
