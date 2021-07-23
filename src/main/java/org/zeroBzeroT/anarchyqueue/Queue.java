@@ -59,7 +59,7 @@ public class Queue {
         } catch (ServerNotReachableException e) {
             serverQueue.getPlayersConnected().forEach(queuedPlayer ->
                 queuedPlayer.sendMessage(TextComponent.of(
-                    "Server is currently offline!"
+                    Config.messageOffline
                 ).color(TextColor.RED)));
             return;
         }

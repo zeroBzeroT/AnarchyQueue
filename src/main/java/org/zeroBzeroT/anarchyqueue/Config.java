@@ -12,14 +12,14 @@ public class Config {
 
     public static String serverMain = null;
     public static String serverQueue = null;
+    public static String name = null; // TODO: not in use, implement or remove this
     public static int maxPlayers = 0;
     public static String messagePosition = null;
     public static String messageConnecting = null;
     public static String messageFull = null;
-    public static String messageDown = null;
-    public static String serverName = null;
-    public static int waitOnKick = 0;
-    public static boolean kick = true;
+    public static String messageOffline = null;
+    public static boolean kick = true; // TODO: not in use, implement or remove this
+    public static int waitOnKick = 0; // TODO: not in use, implement or remove this
 
     /**
      * Load the config from the plugin data folder
@@ -50,14 +50,14 @@ public class Config {
         Toml toml = new Toml().read(file);
         serverMain = toml.getString("server-main", "main");
         serverQueue = toml.getString("server-queue", "queue");
+        name = toml.getString("name", "0b0t");
         maxPlayers = toml.getLong("max-players", 420L).intValue();
-        waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
         messagePosition = toml.getString("message-position", "Position in queue: ");
         messageConnecting = toml.getString("message-connecting", "Connecting to the server...");
         messageFull = toml.getString("message-full", "Server is currently full!");
-        messageDown = toml.getString("message-down", "Server is currently down!");
-        serverName = toml.getString("server-name", "0b0t");
+        messageOffline = toml.getString("message-offline", "Server is currently down!");
         kick = toml.getBoolean("kick", true);
+        waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
 
     }
 

@@ -1,11 +1,11 @@
 # ${project.artifactId} v${project.version}
 server-main = "main"
 server-queue = "queue"
+name = "0b0t"
 max-players = 420
-wait-on-kick = 16
 message-position = "Position in queue: "
 message-connecting = "Connecting to the server..."
 message-full = "Server is currently full!"
-message-down = "Server is currently down!"
-server-name = "0b0t"
+message-offline = "Server is currently down!"
 kick = true
+wait-on-kick = 16
