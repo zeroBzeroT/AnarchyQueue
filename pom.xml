@@ -8,7 +8,10 @@
   <artifactId>AnarchyQueue</artifactId>
   <version>1.5.1</version>
   <packaging>jar</packaging>
+
   <name>${project.artifactId}</name>
+  <description>velocity queue system for anarchy servers</description>
+  <url>https://github.com/zeroBzeroT/AnarchyQueue</url>
 
   <properties>
     <java.version>1.8</java.version>
@@ -28,6 +31,19 @@
           <source>${java.version}</source>
           <target>${java.version}</target>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <id>filter-src</id>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -56,16 +72,24 @@
 
   <repositories>
     <repository>
-      <id>sonatype snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <id>velocity</id>
+      <url>https://repo.velocitypowered.com/releases/</url>
+    </repository>
+    <repository>
+      <id>minecraft</id>
+      <url>https://libraries.minecraft.net/</url>
+    </repository>
+    <repository>
+      <id>sponge</id>
+      <url>https://repo.spongepowered.org/maven</url>
     </repository>
   </repositories>
 
   <dependencies>
     <dependency>
-      <groupId>net.md-5</groupId>
-      <artifactId>bungeecord-api</artifactId>
-      <version>1.16-R0.4</version>
+      <groupId>com.velocitypowered</groupId>
+      <artifactId>velocity-api</artifactId>
+      <version>1.1.8</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
