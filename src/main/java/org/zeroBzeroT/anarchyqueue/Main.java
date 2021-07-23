@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
-import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -39,7 +38,7 @@ public class Main {
         } catch (IOException e) {
             logger.warn(e.getMessage());
         }
-        commandManager.register(new SlotsCommand(), "maxplayers");
+        commandManager.register("maxplayers", new SlotsCommand(), "maxslots");
         instance = this;
     }
 
