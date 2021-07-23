@@ -56,33 +56,39 @@ public class Queue {
         try {
             serverMain = getServer(Config.serverMain);
         } catch (ServerNotReachableException e) {
-            sendNotification();
+            serverQueue.getPlayersConnected().forEach(queuedPlayer ->
+                queuedPlayer.sendMessage(TextComponent.of(
+                    "Server is currently offline!"
+                ).color(TextColor.RED)));
             return;
         }
-        // check current player counts
-        int onlinePlayersMain = serverMain.getPlayersConnected().size();
-        int onlinePlayersQueue = serverQueue.getPlayersConnected().size();
-        log.info("Online players: main " + onlinePlayersMain + " / queue " + onlinePlayersQueue);
-        // TODO: send notifications to players every seconds % 10 == 0
-        // TODO: check for maximum connected players
-        // TODO: if too many players on main send infos and skip processing
-        // get next player to move to main server
+        // check main server full
+        boolean full = serverMain.getPlayersConnected().size() > 200;
+        // send infos every 10 seconds
+        if (Instant.now().getEpochSecond() % 10 == 0) {
+            sendInfos(serverQueue, full);
+        }
+        if (full) return;
         if (queuedPlayers.size() == 0) return;
-        sendNotification();
+        // get next player to move to main server
         // connect first player
         Player player = queuedPlayers.remove(0);
         player.createConnectionRequest(serverMain);
     }
 
-    private void sendNotification() {
-        // send every 10 seconds only
-        if (Instant.now().getEpochSecond() % 10 != 0) return;
+    private void sendInfos(RegisteredServer serverQueue, boolean full) {
         for (int i = 0; i < queuedPlayers.size(); i++) {
             queuedPlayers
                 .get(i)
                 .sendMessage(TextComponent.of(
                     "Position in queue: " + i + "/" + queuedPlayers.size()
                 ).color(TextColor.DARK_AQUA));
+        }
+        if (full) {
+            serverQueue.getPlayersConnected().forEach(queuedPlayer ->
+                queuedPlayer.sendMessage(TextComponent.of(
+                    "Server is currently full!"
+                ).color(TextColor.DARK_AQUA)));
         }
     }
 
