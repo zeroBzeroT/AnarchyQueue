@@ -48,8 +48,8 @@ public class Config {
         Toml toml = new Toml().read(file);
         target = toml.getString("target", "main");
         queue = toml.getString("queue", "queue");
-        maxPlayers = toml.getDouble("maxPlayers", 420d).intValue();
-        waitOnKick = toml.getDouble("waitOnKick", 16d).intValue();
+        maxPlayers = toml.getLong("maxPlayers", 420L).intValue();
+        waitOnKick = toml.getLong("waitOnKick", 16L).intValue();
         messagePosition = toml.getString("messagePosition", "&6Position in queue: &l%position%");
         messageConnecting = toml.getString("messageConnecting", "&6Connecting to the server...");
         serverName = toml.getString("serverName", "0b0t");
