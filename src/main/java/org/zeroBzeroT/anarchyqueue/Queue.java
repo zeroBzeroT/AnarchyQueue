@@ -5,8 +5,8 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import net.kyori.text.TextComponent;
-import net.kyori.text.format.TextColor;
+import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.text.Component;
 import org.slf4j.Logger;
 
 import java.time.Duration;
@@ -58,9 +58,9 @@ public class Queue {
             serverMain = getServer(Config.serverMain);
         } catch (ServerNotReachableException e) {
             serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                queuedPlayer.sendMessage(TextComponent.of(
+                queuedPlayer.sendMessage(Identity.nil(), Component.text(
                     Config.messageOffline
-                ).color(TextColor.RED)));
+                )));
             return;
         }
         // check main server full
@@ -78,7 +78,7 @@ public class Queue {
             .filter(p -> p.getUniqueId().equals(uuid))
             .filter(p -> p.getPing() != -1)
             .findAny().ifPresent(p -> {
-            p.sendMessage(TextComponent.of(Config.messageConnecting).color(TextColor.DARK_AQUA));
+            p.sendMessage(Identity.nil(), Component.text(Config.messageConnecting));
             p.createConnectionRequest(serverMain);
         });
     }
@@ -87,15 +87,15 @@ public class Queue {
         for (int i = 0; i < queuedPlayers.size(); i++) {
             queuedPlayers
                 .get(i)
-                .sendMessage(TextComponent.of(
+                .sendMessage(Identity.nil(), Component.text(
                     Config.messagePosition + i + "/" + queuedPlayers.size()
-                ).color(TextColor.DARK_AQUA));
+                ));
         }
         if (full) {
             serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                queuedPlayer.sendMessage(TextComponent.of(
+                queuedPlayer.sendMessage(Identity.nil(), Component.text(
                     Config.messageFull
-                ).color(TextColor.DARK_AQUA)));
+                )));
         }
     }
 
