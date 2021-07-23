@@ -27,13 +27,11 @@ public class Main {
     private static Main instance;
     public final ProxyServer server;
     public final Logger log;
-    private final CommandManager commandManager;
     private final Path dataDir;
 
     @Inject
     public Main(ProxyServer server, CommandManager commandManager, Logger logger, @DataDirectory final Path dataDir) {
         this.server = server;
-        this.commandManager = commandManager;
         this.log = logger;
         this.dataDir = dataDir;
         try {
