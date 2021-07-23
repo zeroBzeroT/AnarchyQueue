@@ -1,66 +1,87 @@
 package org.zeroBzeroT.anarchyqueue;
 
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.plugin.Plugin;
+import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import com.velocitypowered.api.proxy.ProxyServer;
+import org.slf4j.Logger;
 
-import java.io.File;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Duration;
 
-public class Main extends Plugin {
+@Plugin(
+    id = "AnarchyQueue",
+    name = "AnarchyQueue",
+    version = "2.0.0-SNAPSHOT",
+    description = "velocity queue system for anarchy servers",
+    url = "https://github.com/zeroBzeroT/AnarchyQueue",
+    authors = {"bierdosenhalter", "nothub"}
+)
+public class Main {
+
     private static Main instance;
+    public final ProxyServer server;
+    public final Logger log;
+    private final CommandManager commandManager;
+    private final Path dataDir;
+
+    @Inject
+    public Main(ProxyServer server, CommandManager commandManager, Logger logger, @DataDirectory final Path dataDir) {
+        this.server = server;
+        this.commandManager = commandManager;
+        this.log = logger;
+        this.dataDir = dataDir;
+        try {
+            Config.loadConfig(dataDir);
+        } catch (IOException e) {
+            logger.warn(e.getMessage());
+        }
+        commandManager.register(new SlotsCommand(), "slots");
+        instance = this;
+    }
 
     public static Main getInstance() {
+        if (instance == null) throw new IllegalStateException("instance was null!");
         return instance;
     }
 
-    public static void log(String module, String message) {
-        Main.getInstance().getLogger().info("§a[" + module + "] §e" + message + "§r");
-    }
+    @Subscribe
+    public void onProxyInitialize(ProxyInitializeEvent event) {
 
-    @Override
-    public void onEnable() {
-        super.onEnable();
-
-        instance = this;
-
-        String folder = getDataFolder().getPath();
-
-        // Create path directories if not existent
-        //noinspection ResultOfMethodCallIgnored
-        new File(folder).mkdirs();
-
-        // Config
         try {
-            Config.getConfig(this);
+            Config.loadConfig(dataDir);
         } catch (Exception e) {
-            e.printStackTrace();
-            onDisable();
+            log.error(e.getMessage());
+            server.shutdown();
             return;
         }
 
         Queue queue = new Queue();
 
-        // Commands
-        getProxy().getPluginManager().registerCommand(this, new SlotsCommand());
-
-        // Listener
-        getProxy().getPluginManager().registerListener(this, queue);
+        server.getEventManager().register(this, queue);
 
         // Run queue flusher
-        getProxy().getScheduler().schedule(this, queue::flushQueue, 1, 2, TimeUnit.SECONDS);
+        server.getScheduler()
+            .buildTask(this, queue::flushQueue)
+            .delay(Duration.ofSeconds(1))
+            .repeat(Duration.ofSeconds(2))
+            .schedule();
 
         // Run player notification
-        getProxy().getScheduler().schedule(this, queue::sendUpdate, 1, 10, TimeUnit.SECONDS);
+        server.getScheduler()
+            .buildTask(this, queue::sendUpdate)
+            .delay(Duration.ofSeconds(1))
+            .repeat(Duration.ofSeconds(10))
+            .schedule();
 
-        log("onEnable", "§3Queue Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messagePosition));
-        log("onEnable", "§3Connecting Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageConnecting));
+        log.info("Position Message: " + Config.messagePosition);
+        log.info("Connecting Message: " + Config.messageConnecting);
+
     }
 
-    @Override
-    public void onDisable() {
-        super.onDisable();
-
-        getProxy().getPluginManager().unregisterListeners(this);
-        getProxy().getPluginManager().unregisterCommands(this);
-    }
 }

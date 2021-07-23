@@ -1,18 +1,15 @@
 package org.zeroBzeroT.anarchyqueue;
 
-import net.md_5.bungee.api.plugin.Plugin;
-import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
+import com.moandjiezana.toml.Toml;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Arrays;
+import java.nio.file.Path;
 
-@SuppressWarnings("CanBeFinal")
 public class Config {
+
     public static String target = null;
     public static String queue = null;
     public static int maxPlayers = 0;
@@ -23,41 +20,41 @@ public class Config {
     public static boolean kick = true;
 
     /**
-     * Loads a config file, and if it doesn't exist creates one
-     *
-     * @param plugin Bungeecord plugin
-     */
-    static void getConfig(Plugin plugin) throws Exception {
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-
-        if (configFile.exists()) {
-            loadConfig(configFile);
-        } else {
-            try {
-                InputStream in = plugin.getResourceAsStream("config.yml");
-                Files.copy(in, configFile.toPath());
-                loadConfig(configFile);
-            } catch (IOException exception) {
-                exception.printStackTrace();
-            }
-        }
-    }
-
-    /**
      * Load the config from the plugin data folder
      *
-     * @param configFile Path to the configuration file
+     * @param path Path to the plugin data folder
      */
-    static void loadConfig(File configFile) throws IOException {
-        Configuration config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+    static void loadConfig(Path path) throws IOException {
 
-        Arrays.asList(Config.class.getDeclaredFields()).forEach(field -> {
-            try {
-                field.setAccessible(true);
-                field.set(Config.class, config.get(field.getName()));
-            } catch (SecurityException | IllegalArgumentException | IllegalAccessException exception) {
-                exception.printStackTrace();
+        File file = new File(path.toFile(), "config.toml");
+
+        if (!file.getParentFile().exists()) {
+            if (!file.getParentFile().mkdirs()) throw new IllegalStateException("unable to create data dir!");
+        }
+
+        if (!file.exists()) {
+            try (InputStream input = Config.class.getResourceAsStream("/" + file.getName())) {
+                if (input != null) {
+                    Files.copy(input, file.toPath());
+                } else {
+                    if (!file.createNewFile()) throw new IllegalStateException("unable to load default config!");
+                }
+            } catch (IOException exception) {
+                Main.getInstance().log.warn(exception.getMessage());
+                return;
             }
-        });
+        }
+
+        Toml toml = new Toml().read(file);
+        target = toml.getString("target", "main");
+        queue = toml.getString("queue", "queue");
+        maxPlayers = toml.getDouble("maxPlayers", 420d).intValue();
+        waitOnKick = toml.getDouble("waitOnKick", 16d).intValue();
+        messagePosition = toml.getString("messagePosition", "&6Position in queue: &l%position%");
+        messageConnecting = toml.getString("messageConnecting", "&6Connecting to the server...");
+        serverName = toml.getString("serverName", "0b0t");
+        kick = toml.getBoolean("kick", true);
+
     }
+
 }
