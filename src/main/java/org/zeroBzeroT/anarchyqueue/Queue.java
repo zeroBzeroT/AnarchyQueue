@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -70,10 +71,12 @@ public class Queue {
         }
         if (full) return;
         if (queuedPlayers.size() == 0) return;
-        // get next player to move to main server
-        // connect first player
-        Player player = queuedPlayers.remove(0);
-        player.createConnectionRequest(serverMain);
+        // connect next player
+        UUID uuid = queuedPlayers.remove(0).getUniqueId();
+        // lookup player from queue server to be safe the player is connected
+        serverQueue.getPlayersConnected().stream()
+            .filter(p -> p.getUniqueId().equals(uuid))
+            .findAny().ifPresent(p -> p.createConnectionRequest(serverMain));
     }
 
     private void sendInfos(RegisteredServer serverQueue, boolean full) {
