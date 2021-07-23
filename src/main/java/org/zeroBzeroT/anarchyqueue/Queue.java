@@ -1,7 +1,7 @@
 package org.zeroBzeroT.anarchyqueue;
 
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
+import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -39,7 +39,9 @@ public class Queue {
     }
 
     @Subscribe
-    public void onPlayerChooseInitialServer(PlayerChooseInitialServerEvent e) {
+    public void onServerConnectedEvent(ServerConnectedEvent e) {
+        if (!e.getServer().getServerInfo().getName().equals(Config.serverQueue)) return;
+        log.info("queuing " + e.getPlayer().getUsername() + " (" + e.getPlayer().getUniqueId().toString() + ")");
         queuedPlayers.add(e.getPlayer());
     }
 
@@ -72,14 +74,18 @@ public class Queue {
         if (full) return;
         if (queuedPlayers.size() == 0) return;
         // connect next player
-        UUID uuid = queuedPlayers.remove(0).getUniqueId();
+        UUID uuid = queuedPlayers.get(0).getUniqueId();
+        log.info("processing " + uuid.toString());
         // lookup player from queue server and ping to be safe the player is connected
         serverQueue.getPlayersConnected().stream()
             .filter(p -> p.getUniqueId().equals(uuid))
-            .filter(p -> p.getPing() != -1)
             .findAny().ifPresent(p -> {
             p.sendMessage(Identity.nil(), Component.text(Config.messageConnecting));
-            p.createConnectionRequest(serverMain);
+            try {
+                if (p.createConnectionRequest(serverMain).connect().get().isSuccessful()) queuedPlayers.remove(0);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("unable to connect " + p.getUsername() + "(" + p.getUniqueId().toString() + ") to " + Config.serverMain + ": " + e.getMessage());
+            }
         });
     }
 
