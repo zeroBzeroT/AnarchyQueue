@@ -58,7 +58,7 @@ public class Main {
             return;
         }
 
-        Queue queue = new Queue();
+        Queue queue = new Queue(server);
 
         server.getEventManager().register(this, queue);
 
