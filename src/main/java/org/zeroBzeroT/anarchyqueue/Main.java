@@ -38,7 +38,6 @@ public class Main {
         } catch (IOException e) {
             logger.warn(e.getMessage());
         }
-        commandManager.register("maxplayers", new SlotsCommand(), "maxslots");
         instance = this;
     }
 
