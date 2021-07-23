@@ -54,6 +54,8 @@ public class Queue {
             log.warn(e.getMessage());
             return;
         }
+        // skip if no players queued
+        if (queuedPlayers.size() == 0) return;
         // check main server reachability
         final RegisteredServer serverMain;
         try {
@@ -74,7 +76,6 @@ public class Queue {
             sendInfos(serverQueue, full);
         }
         if (full) return;
-        if (queuedPlayers.size() == 0) return;
         // connect next player
         UUID uuid = queuedPlayers.get(0).getUniqueId();
         log.info("processing " + uuid.toString());
