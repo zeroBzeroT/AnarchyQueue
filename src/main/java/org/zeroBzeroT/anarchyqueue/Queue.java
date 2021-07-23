@@ -59,10 +59,12 @@ public class Queue {
         try {
             serverMain = getServer(Config.serverMain);
         } catch (ServerNotReachableException e) {
-            serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                queuedPlayer.sendMessage(Identity.nil(), Component.text(
-                    Config.messageOffline
-                )));
+            if (Instant.now().getEpochSecond() % 10 == 0) {
+                serverQueue.getPlayersConnected().forEach(queuedPlayer ->
+                    queuedPlayer.sendMessage(Identity.nil(), Component.text(
+                        Config.messageOffline
+                    )));
+            }
             return;
         }
         // check main server full
@@ -94,7 +96,7 @@ public class Queue {
             queuedPlayers
                 .get(i)
                 .sendMessage(Identity.nil(), Component.text(
-                    Config.messagePosition + i + "/" + queuedPlayers.size()
+                    Config.messagePosition + i + 1 + "/" + queuedPlayers.size()
                 ));
         }
         if (full) {
