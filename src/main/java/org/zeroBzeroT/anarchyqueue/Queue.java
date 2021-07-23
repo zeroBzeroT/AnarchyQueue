@@ -5,9 +5,12 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import net.kyori.text.TextComponent;
+import net.kyori.text.format.TextColor;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,7 +33,7 @@ public class Queue {
         proxyServer.getScheduler()
             .buildTask(Main.getInstance(), this::process)
             .delay(Duration.ofSeconds(1))
-            .repeat(Duration.ofSeconds(2))
+            .repeat(Duration.ofSeconds(1))
             .schedule();
     }
 
@@ -40,13 +43,20 @@ public class Queue {
     }
 
     public void process() {
-        final RegisteredServer serverMain;
+        // check queue server reachability
         final RegisteredServer serverQueue;
         try {
-            serverMain = getServer(Config.serverMain);
             serverQueue = getServer(Config.serverQueue);
         } catch (ServerNotReachableException e) {
             log.warn(e.getMessage());
+            return;
+        }
+        // check main server reachability
+        final RegisteredServer serverMain;
+        try {
+            serverMain = getServer(Config.serverMain);
+        } catch (ServerNotReachableException e) {
+            sendNotification();
             return;
         }
         // check current player counts
@@ -55,26 +65,41 @@ public class Queue {
         log.info("Online players: main " + onlinePlayersMain + " / queue " + onlinePlayersQueue);
         // TODO: send notifications to players every seconds % 10 == 0
         // TODO: check for maximum connected players
+        // TODO: if too many players on main send infos and skip processing
         // get next player to move to main server
         if (queuedPlayers.size() == 0) return;
-        Player player = queuedPlayers.get(0);
+        sendNotification();
+        // connect first player
+        Player player = queuedPlayers.remove(0);
         player.createConnectionRequest(serverMain);
     }
 
-    private RegisteredServer getServer(String serverName) throws ServerNotReachableException {
-        // get server configured in velocity by name
-        Optional<RegisteredServer> serverOpt = proxyServer.getServer(serverName);
-        if (!serverOpt.isPresent()) {
-            throw new ServerNotReachableException("Server " + serverName + " is not configured!");
+    private void sendNotification() {
+        // send every 10 seconds only
+        if (Instant.now().getEpochSecond() % 10 != 0) return;
+        for (int i = 0; i < queuedPlayers.size(); i++) {
+            queuedPlayers
+                .get(i)
+                .sendMessage(TextComponent.of(
+                    "Position in queue: " + i + "/" + queuedPlayers.size()
+                ).color(TextColor.DARK_AQUA));
         }
-        final RegisteredServer serverQueue = serverOpt.get();
+    }
+
+    private RegisteredServer getServer(String name) throws ServerNotReachableException {
+        // get server configured in velocity.toml by name
+        Optional<RegisteredServer> serverOpt = proxyServer.getServer(name);
+        if (!serverOpt.isPresent()) {
+            throw new ServerNotReachableException("Server " + name + " is not configured!");
+        }
+        final RegisteredServer server = serverOpt.get();
         // test server availability by pinging
         try {
-            serverQueue.ping().get();
+            server.ping().get();
         } catch (InterruptedException | ExecutionException e) {
-            throw new ServerNotReachableException("Server " + serverName + " is not reachable: " + e.getMessage());
+            throw new ServerNotReachableException("Server " + name + " is not reachable: " + e.getMessage());
         }
-        return serverQueue;
+        return server;
     }
 
 }
