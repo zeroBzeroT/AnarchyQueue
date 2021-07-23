@@ -57,20 +57,6 @@ public class Main {
         Queue queue = new Queue(server);
         server.getEventManager().register(this, queue);
 
-        // Schedule queue flusher
-        server.getScheduler()
-            .buildTask(this, queue::flushQueue)
-            .delay(Duration.ofSeconds(1))
-            .repeat(Duration.ofSeconds(2))
-            .schedule();
-
-        // Schedule player notification
-        server.getScheduler()
-            .buildTask(this, queue::sendUpdate)
-            .delay(Duration.ofSeconds(1))
-            .repeat(Duration.ofSeconds(10))
-            .schedule();
-
         log.info("Position Message: " + Config.messagePosition);
         log.info("Connecting Message: " + Config.messageConnecting);
 
