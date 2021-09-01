@@ -8,9 +8,13 @@ updates:
       time: "12:00"
       timezone: "Europe/Berlin"
     assignees:
-      - "nothub"
+      - "bierdosenhalter"
+      - "Krazzzzymonkey"
+      - "Pr3roxDLC"
     reviewers:
-      - "nothub"
+      - "bierdosenhalter"
+      - "Krazzzzymonkey"
+      - "Pr3roxDLC"
     commit-message:
       prefix: "maven"
       include: "scope"
@@ -22,9 +26,13 @@ updates:
       time: "12:00"
       timezone: "Europe/Berlin"
     assignees:
-      - "nothub"
+      - "bierdosenhalter"
+      - "Krazzzzymonkey"
+      - "Pr3roxDLC"
     reviewers:
-      - "nothub"
+      - "bierdosenhalter"
+      - "Krazzzzymonkey"
+      - "Pr3roxDLC"
     commit-message:
       prefix: "github-actions"
       include: "scope"
