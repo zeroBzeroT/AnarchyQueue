@@ -92,9 +92,9 @@ public class Queue implements Listener {
                     if (isNotConnected(player, targetServer)) {
                         Callback<Boolean> cb = (result, error) -> {
                             if (result) {
-                                Main.log("flushQueue", "§3§b" + finalPlayer.toString() + "§3 connected to §b" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                                Main.log("flushQueue", "§3§b" + finalPlayer + "§3 connected to §b" + Config.target + "§3. Queue count is " + playersQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
                             } else {
-                                Main.log("flushQueue", "§c§b" + finalPlayer.toString() + "s§c connection to §b" + Config.target + "§c failed: " + error.getMessage());
+                                Main.log("flushQueue", "§c§b" + finalPlayer + "s§c connection to §b" + Config.target + "§c failed: " + error.getMessage());
                                 finalPlayer.sendMessage(TextComponent.fromLegacyText("§cConnection to " + Config.serverName + " failed!§r"));
                                 playersQueue.add(finalPlayer);
                             }
@@ -104,7 +104,7 @@ public class Queue implements Listener {
                         player.connect(targetServer, cb);
                     } else {
                         player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
-                        Main.log("flushQueue", "§c§b" + player.toString() + "§c was disconnected because there was already a connection for this account to the server.");
+                        Main.log("flushQueue", "§c§b" + player + "§c was disconnected because there was already a connection for this account to the server.");
                     }
                 }
             } catch (InterruptedException e) {
@@ -188,7 +188,7 @@ public class Queue implements Listener {
                 try {
                     mutex.acquire();
                     playersQueue.remove(player);
-                    Main.log("onServerDisconnect", "§3§b" + player.toString() + "§3 was removed from §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
+                    Main.log("onServerDisconnect", "§3§b" + player + "§3 was removed from §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ".");
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -232,7 +232,7 @@ public class Queue implements Listener {
                         event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));
 
                         player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason + "§r"));
-                        Main.log("onServerKick", "§3§b" + player.toString() + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3). Kicked count is " + (kickedPlayers.size() + 1) + ".");
+                        Main.log("onServerKick", "§3§b" + player + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3). Kicked count is " + (kickedPlayers.size() + 1) + ".");
 
                         kickedPlayers.put(player, Instant.now().getEpochSecond());
                     }
@@ -275,7 +275,7 @@ public class Queue implements Listener {
                     Main.log("onServerConnect", "§3§b" + event.getPlayer() + "§3 was directly connected to §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
                 } else {
                     player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
-                    Main.log("onServerConnect", "§c§b" + player.toString() + "§c was disconnected because there was already a connection for this account to the server.");
+                    Main.log("onServerConnect", "§c§b" + player + "§c was disconnected because there was already a connection for this account to the server.");
                 }
             } else {
                 // Send full message
