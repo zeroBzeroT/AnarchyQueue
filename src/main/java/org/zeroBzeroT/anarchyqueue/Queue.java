@@ -179,6 +179,8 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent event) {
+        System.out.println("onServerDisconnect" +  event.getPlayer() + " "  +  event.getPlayer().getServer() + " " + event.getTarget());
+
         ProxiedPlayer player = event.getPlayer();
         if (playersQueue.contains(player)) {
             Server playerNewServer = player.getServer();
@@ -203,7 +205,9 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerKick(ServerKickEvent event) {
-        // check if its a "fresh" connection
+        System.out.println("onServerKick" +  event.getPlayer() + " "  +  event.getPlayer().getServer() + " " + event.getKickedFrom() + " " + event.getCancelServer());
+
+        // check if it's a "fresh" connection
         if (event.getPlayer().getServer() == null)
             return;
 
@@ -322,8 +326,8 @@ public class Queue implements Listener {
             try {
                 while (!sig.done && slept < 1000) {
                     //noinspection BusyWait
-                    Thread.sleep(100);
-                    slept += 100;
+                    Thread.sleep(20);
+                    slept += 20;
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -335,7 +339,7 @@ public class Queue implements Listener {
         @Override
         public void done(ServerPing serverPing, Throwable throwable) {
             if (throwable != null) {
-                // we had an error so we assume the server is offline
+                // we had an error, so we assume the server is offline
                 return;
             }
 
