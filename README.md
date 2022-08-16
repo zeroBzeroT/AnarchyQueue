@@ -5,11 +5,12 @@
 ![last commit](https://img.shields.io/github/last-commit/zeroBzeroT/AnarchyQueue)
 ![lines of code](https://tokei.rs/b1/github/zeroBzeroT/AnarchyQueue)
 ![repo size](https://img.shields.io/github/languages/code-size/zeroBzeroT/AnarchyQueue.svg?label=repo%20size)
+[![GitHub all releases](https://img.shields.io/github/downloads/zeroBzeroT/AnarchyQueue/total)](https://github.com/zeroBzeroT/AnarchyQueue/releases)
 
 ---
 
-A simple queue system for bungeecord in the style of the 2b2t queue. 
+A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t queue. 
 
 ### Commands
 
- - **maxplayers**   sets the capacity of the main server
+ - **/maxplayers {count}**   gets or sets the capacity of the main server
