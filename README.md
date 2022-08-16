@@ -14,3 +14,8 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
 ### Commands
 
  - **/maxplayers {count}**   gets or sets the capacity of the main server
+
+### Versions
+
+ - 1.* is for BungeeCord
+ - 2.* is for Velocity
