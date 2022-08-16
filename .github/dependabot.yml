@@ -9,12 +9,8 @@ updates:
       timezone: "Europe/Berlin"
     assignees:
       - "bierdosenhalter"
-      - "Krazzzzymonkey"
-      - "Pr3roxDLC"
     reviewers:
       - "bierdosenhalter"
-      - "Krazzzzymonkey"
-      - "Pr3roxDLC"
     commit-message:
       prefix: "maven"
       include: "scope"
@@ -27,12 +23,8 @@ updates:
       timezone: "Europe/Berlin"
     assignees:
       - "bierdosenhalter"
-      - "Krazzzzymonkey"
-      - "Pr3roxDLC"
     reviewers:
       - "bierdosenhalter"
-      - "Krazzzzymonkey"
-      - "Pr3roxDLC"
     commit-message:
       prefix: "github-actions"
       include: "scope"

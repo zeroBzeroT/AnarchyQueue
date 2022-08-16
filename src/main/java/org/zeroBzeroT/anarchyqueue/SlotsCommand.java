@@ -17,15 +17,15 @@ public class SlotsCommand extends Command {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (sender != ProxyServer.getInstance().getConsole()) {
-            sender.sendMessage(new TextComponent("§cUnknown command§r"));
+            sender.sendMessage(new TextComponent("§cUnknown command. Type \"/help\" for help."));
             return;
         } else if (args.length != 1) {
-            sender.sendMessage(new TextComponent("§3Current maximum player capacity is " + Config.maxPlayers + ".§r"));
+            sender.sendMessage(new TextComponent("§3Current maximum player capacity for the main server is " + Config.maxPlayers + "."));
             return;
         }
 
         int maxPlayers = Integer.parseInt(args[0]);
-        sender.sendMessage(new TextComponent("§3Changed maximum player capacity to " + maxPlayers + ".§r"));
+        sender.sendMessage(new TextComponent("§3Changed maximum player capacity for the main server to " + maxPlayers + "."));
         Config.maxPlayers = maxPlayers;
     }
 }

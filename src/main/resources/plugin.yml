@@ -2,4 +2,4 @@ name: AnarchyQueue
 main: org.zeroBzeroT.anarchyqueue.Main
 version: ${project.version}
 author: bierdosenhalter
-description: bungeecoord queue for anarchy servers
+description: A BungeeCord queue plugin for minecraft anarchy servers.

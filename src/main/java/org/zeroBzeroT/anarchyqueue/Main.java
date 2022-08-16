@@ -54,6 +54,9 @@ public class Main extends Plugin {
 
         log("onEnable", "§3Queue Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messagePosition));
         log("onEnable", "§3Connecting Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageConnecting));
+        log("onEnable", "§3Max Players on main server: §r" + Config.maxPlayers);
+        log("onEnable", "§3Pass main server kicks to client: §r" + Config.kick);
+        log("onEnable", "§3Kick on restart of the main server: §r" + Config.kickOnRestart);
     }
 
     @Override

@@ -7,3 +7,4 @@ messagePosition: "&6Position in queue: &l%position%"
 messageConnecting: "&6Connecting to the server..."
 serverName: "0b0t"
 kick: true
+kickOnRestart: false

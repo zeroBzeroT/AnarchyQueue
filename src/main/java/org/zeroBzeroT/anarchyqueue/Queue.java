@@ -14,13 +14,15 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class Queue implements Listener {
-
     private final Deque<ProxiedPlayer> playersQueue;
     private final HashMap<ProxiedPlayer, Long> kickedPlayers = new HashMap<>();
     private final Semaphore mutex = new Semaphore(1);
@@ -179,8 +181,6 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent event) {
-        System.out.println("onServerDisconnect" +  event.getPlayer() + " "  +  event.getPlayer().getServer() + " " + event.getTarget());
-
         ProxiedPlayer player = event.getPlayer();
         if (playersQueue.contains(player)) {
             Server playerNewServer = player.getServer();
@@ -205,8 +205,6 @@ public class Queue implements Listener {
      */
     @EventHandler
     public void onServerKick(ServerKickEvent event) {
-        System.out.println("onServerKick" +  event.getPlayer() + " "  +  event.getPlayer().getServer() + " " + event.getKickedFrom() + " " + event.getCancelServer());
-
         // check if it's a "fresh" connection
         if (event.getPlayer().getServer() == null)
             return;
@@ -223,14 +221,14 @@ public class Queue implements Listener {
                     // if banned don't add back to the queue;
                     player.disconnect(event.getKickReasonComponent());
                 } else if (!reason.toLowerCase().contains("lost connection")) {
-                    // add to the queue again since the player did not left the queue and the event is not triggered
+                    // add to the queue again, since the player did not leave the queue and the right event was not triggered
                     if (event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)) {
                         playersQueue.add(player);
                         Main.log("onServerKick", "§3§b" + player.toString() + "§3 was added to the §b" + Config.queue + "§3. Queue count is " + playersQueue.size() + ". Kicked count is " + (kickedPlayers.size() + 1) + ".");
                     }
 
-                    // if config is not set to kick or if the server was kicked while connecting
-                    if(!Config.kick || event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)) {
+                    // if config is not set to kick, if the player was kicked while connecting to main or main is restarting
+                    if (!Config.kick || event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue) || (!Config.kickOnRestart && reason.toLowerCase().contains("server is restarting"))) {
                         // cancel kick and send back to the queue
                         event.setCancelled(true);
                         event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));
@@ -239,8 +237,7 @@ public class Queue implements Listener {
                         Main.log("onServerKick", "§3§b" + player + "§3 was sent back to §b" + Config.queue + "§3 after a kick (" + reason + "§3). Kicked count is " + (kickedPlayers.size() + 1) + ".");
 
                         kickedPlayers.put(player, Instant.now().getEpochSecond());
-                    }
-                    else {
+                    } else {
                         // kick the player if the event was not cancelled
                         Main.log("onServerKick", "§3§b" + player.toString() + "§3 was kicked for " + reason + "§3.");
                     }
@@ -260,13 +257,14 @@ public class Queue implements Listener {
     public void onServerConnect(ServerConnectEvent event) {
         ProxiedPlayer player = event.getPlayer();
 
-        // check if its a "fresh" connection
+        // check if it's a "fresh" connection
         if (player.getServer() != null)
             return;
 
         // Direct connect to main server
         if (playersQueue.size() == 0 && event.getTarget().equals(ProxyServer.getInstance().getServerInfo(Config.queue))) {
             // Get status of target server
+            // TODO: make this check global with and time updates
             ServerInfoGetter mainServerInfo = ServerInfoGetter.awaitServerInfo(Config.target);
 
             // main server is online and player count is lower then max
@@ -326,8 +324,8 @@ public class Queue implements Listener {
             try {
                 while (!sig.done && slept < 1000) {
                     //noinspection BusyWait
-                    Thread.sleep(20);
-                    slept += 20;
+                    Thread.sleep(10);
+                    slept += 10;
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();

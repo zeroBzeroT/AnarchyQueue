@@ -21,6 +21,7 @@ public class Config {
     public static String serverName = null;
     public static int waitOnKick = 0;
     public static boolean kick = true;
+    public static boolean kickOnRestart = false;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
@@ -56,6 +57,7 @@ public class Config {
                 field.setAccessible(true);
                 field.set(Config.class, config.get(field.getName()));
             } catch (SecurityException | IllegalArgumentException | IllegalAccessException exception) {
+                Main.log("config", "§fError while loading the config. Please remove the config file and let the plugin generate a new one:");
                 exception.printStackTrace();
             }
         });
