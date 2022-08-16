@@ -8,3 +8,4 @@ messageConnecting: "&6Connecting to the server..."
 serverName: "0b0t"
 kick: true
 kickOnRestart: false
+kickOnTooMany: false

@@ -228,7 +228,9 @@ public class Queue implements Listener {
                     }
 
                     // if config is not set to kick, if the player was kicked while connecting to main or main is restarting
-                    if (!Config.kick || event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue) || (!Config.kickOnRestart && reason.toLowerCase().contains("server is restarting"))) {
+                    if (!Config.kick || event.getPlayer().getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)
+                            || (!Config.kickOnRestart && reason.toLowerCase().contains("server is restarting"))
+                            || (!Config.kickOnTooMany && reason.toLowerCase().contains("too many people logging in"))) {
                         // cancel kick and send back to the queue
                         event.setCancelled(true);
                         event.setCancelServer(ProxyServer.getInstance().getServerInfo(Config.queue));

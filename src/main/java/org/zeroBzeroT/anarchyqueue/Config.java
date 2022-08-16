@@ -22,6 +22,7 @@ public class Config {
     public static int waitOnKick = 0;
     public static boolean kick = true;
     public static boolean kickOnRestart = false;
+    public static boolean kickOnTooMany = false;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
