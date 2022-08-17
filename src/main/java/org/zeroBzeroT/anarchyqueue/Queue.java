@@ -205,7 +205,7 @@ public class Queue implements Listener {
     }
 
     /**
-     * Server went down or player got kicked
+     * Server went down or player got kicked or just disconnected
      */
     @EventHandler
     public void onServerKick(ServerKickEvent event) {
@@ -244,8 +244,6 @@ public class Queue implements Listener {
                         Main.log("kick", "§3§f" + player.getName() + "§3 was added to the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
                     }
                 } else {
-                    // kick the player if the event was not cancelled
-                    Main.log("kick", "§3§f" + player.getName() + "§3 was kicked.");
                     // set the disconnect reason from the target server (not the bungee message)
                     player.disconnect(event.getKickReasonComponent());
                 }
@@ -296,7 +294,7 @@ public class Queue implements Listener {
                 }
             } else {
                 // Send full message
-                player.sendMessage(TextComponent.fromLegacyText("§6" + Config.serverName + " is full or offline§r"));
+                player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', Config.messageFullOrOffline)));
             }
         }
     }

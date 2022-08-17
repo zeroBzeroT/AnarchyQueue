@@ -52,11 +52,13 @@ public class Main extends Plugin {
         // Run player notification
         getProxy().getScheduler().schedule(this, queue::sendUpdate, 1, 10, TimeUnit.SECONDS);
 
-        log("config", "§3Queue Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messagePosition));
-        log("config", "§3Connecting Message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageConnecting));
-        log("config", "§3Max Players on main server: §r" + Config.maxPlayers);
+        log("config", "§3Queue message example: §r" + ChatColor.translateAlternateColorCodes('&', Config.messagePosition.replaceAll("%position%", "42")));
+        log("config", "§3Connecting message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageConnecting));
+        log("config", "§3Full or offline message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageFullOrOffline));
+        log("config", "§3Max players on main server: §r" + Config.maxPlayers);
         log("config", "§3Pass main server kicks to client: §r" + Config.kickPassthrough);
         log("config", "§3Kick on restart of the main server: §r" + Config.kickOnRestart);
+        log("config", "§3Kick when the main server is busy: §r" + Config.kickOnBusy);
     }
 
     @Override

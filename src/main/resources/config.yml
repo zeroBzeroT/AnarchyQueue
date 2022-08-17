@@ -3,9 +3,10 @@ target: "main"
 queue: "queue"
 maxPlayers: 420
 waitOnKick: 16
-messagePosition: "&6Position in queue: &l%position%"
-messageConnecting: "&6Connecting to the server..."
-serverName: "0b0t"
+messagePosition: "&6Position in queue: &l%position%&r"
+messageConnecting: "&6Connecting to %server%&6...&r"
+messageFullOrOffline: "&6%server%&6 is full or offline&r"
+serverName: "the server"
 kickPassthrough: true
 kickOnRestart: false
 kickOnBusy: false
