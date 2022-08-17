@@ -20,14 +20,14 @@ public class Config {
     public static String messageConnecting = null;
     public static String serverName = null;
     public static int waitOnKick = 0;
-    public static boolean kick = true;
+    public static boolean kickPassthrough = true;
     public static boolean kickOnRestart = false;
-    public static boolean kickOnTooMany = false;
+    public static boolean kickOnBusy = false;
 
     /**
      * Loads a config file, and if it doesn't exist creates one
      *
-     * @param plugin Bungeecord plugin
+     * @param plugin BungeeCord plugin
      */
     static void getConfig(Plugin plugin) throws Exception {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
