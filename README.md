@@ -27,6 +27,7 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
 | kickPassthrough      | if false, players will be enqueued again                 |
 | kickOnRestart        | if true, players will be kicked when the target restarts |
 | kickOnBusy           | if true, players will be kicked if the target is busy    |
+| bStats               | if true, plugin metrics are enabled                      |
 
 ### Versions
 
