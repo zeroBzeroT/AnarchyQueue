@@ -18,13 +18,13 @@ public class Config {
     public static int maxPlayers = 0;
     public static String messagePosition = null;
     public static String messageConnecting = null;
-    public static String messageFullOrOffline= null;
+    public static String messageFullOrOffline = null;
     public static String serverName = null;
     public static int waitOnKick = 0;
     public static boolean kickPassthrough = true;
     public static boolean kickOnRestart = false;
     public static boolean kickOnBusy = false;
-
+    public static boolean bStats = false;
 
     /**
      * Loads a config file, and if it doesn't exist creates one

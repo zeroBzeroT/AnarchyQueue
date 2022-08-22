@@ -2,6 +2,7 @@ package org.zeroBzeroT.anarchyqueue;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.plugin.Plugin;
+import org.bstats.bungeecord.Metrics;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +53,7 @@ public class Main extends Plugin {
         // Run player notification
         getProxy().getScheduler().schedule(this, queue::sendUpdate, 1, 10, TimeUnit.SECONDS);
 
+        // Print config settings
         log("config", "§3Queue message example: §r" + ChatColor.translateAlternateColorCodes('&', Config.messagePosition.replaceAll("%position%", "42")));
         log("config", "§3Connecting message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageConnecting));
         log("config", "§3Full or offline message: §r" + ChatColor.translateAlternateColorCodes('&', Config.messageFullOrOffline));
@@ -59,6 +61,11 @@ public class Main extends Plugin {
         log("config", "§3Pass main server kicks to client: §r" + Config.kickPassthrough);
         log("config", "§3Kick on restart of the main server: §r" + Config.kickOnRestart);
         log("config", "§3Kick when the main server is busy: §r" + Config.kickOnBusy);
+
+        // Load bStats Module
+        if (Config.bStats) {
+            new Metrics(this, 16225);
+        }
     }
 
     @Override

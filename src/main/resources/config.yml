@@ -10,3 +10,4 @@ serverName: "the server"
 kickPassthrough: true
 kickOnRestart: false
 kickOnBusy: false
+bStats: true
