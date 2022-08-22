@@ -6,6 +6,8 @@
 ![code size](https://img.shields.io/github/languages/code-size/zeroBzeroT/AnarchyQueue)
 [![downloads](https://img.shields.io/github/downloads/zeroBzeroT/AnarchyQueue/total)](https://github.com/zeroBzeroT/AnarchyQueue/releases)
 
+---
+
 A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t queue. 
 
 ### Commands
@@ -33,3 +35,13 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
 
  - 1.* is for BungeeCord
  - 2.* is for Velocity
+
+### Warranty
+
+The Software is provided "as is" and without warranties of any kind, express
+or implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose, and non-infringement. In no event shall the
+Authors or copyright owners be liable for any claims, damages or other
+liability, whether in an action in contract, tort or otherwise, arising from, 
+out of or in connection with the Software or the use or other dealings in the 
+Software.

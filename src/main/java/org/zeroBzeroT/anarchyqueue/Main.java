@@ -62,9 +62,9 @@ public class Main extends Plugin {
         log("config", "§3Kick on restart of the main server: §r" + Config.kickOnRestart);
         log("config", "§3Kick when the main server is busy: §r" + Config.kickOnBusy);
 
-        // Load bStats Module
+        // Load Plugin Metrics
         if (Config.bStats) {
-            new Metrics(this, 16225);
+            new Metrics(this, 16228);
         }
     }
 
