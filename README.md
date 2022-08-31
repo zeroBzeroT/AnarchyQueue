@@ -36,6 +36,10 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
  - 1.* is for BungeeCord
  - 2.* is for Velocity
 
+### Statistics
+
+![Graph](https://bstats.org/signatures/bungeecord/0b0t_AnarchyQueue.svg)
+
 ### Warranty
 
 The Software is provided "as is" and without warranties of any kind, express
