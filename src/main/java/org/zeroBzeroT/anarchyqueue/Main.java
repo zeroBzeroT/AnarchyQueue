@@ -61,6 +61,7 @@ public class Main extends Plugin {
         log("config", "§3Pass main server kicks to client: §r" + Config.kickPassthrough);
         log("config", "§3Kick on restart of the main server: §r" + Config.kickOnRestart);
         log("config", "§3Kick when the main server is busy: §r" + Config.kickOnBusy);
+        log("config", "§3Send status as title: §r" + Config.sendTitle);
 
         // Load Plugin Metrics
         if (Config.bStats) {

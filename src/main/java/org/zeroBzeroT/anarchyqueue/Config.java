@@ -24,7 +24,9 @@ public class Config {
     public static boolean kickPassthrough = true;
     public static boolean kickOnRestart = false;
     public static boolean kickOnBusy = false;
-    public static boolean bStats = false;
+    public static boolean bStats = true;
+
+    public static boolean sendTitle = true;
 
     /**
      * Loads a config file, and if it doesn't exist creates one

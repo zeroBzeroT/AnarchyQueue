@@ -1,9 +1,6 @@
 package org.zeroBzeroT.anarchyqueue;
 
-import net.md_5.bungee.api.Callback;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.ServerPing;
+import net.md_5.bungee.api.*;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
@@ -95,19 +92,24 @@ public class Queue implements Listener {
                     if (isNotConnected(player, targetServer)) {
                         Callback<Boolean> cb = (result, error) -> {
                             if (result) {
-                                Main.log("queue", "§3§f" + finalPlayer.getName() + "§3 connected to server §b" + Config.target + "§3. Queue count is " + playerQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                                Main.log("queue", "§f" + finalPlayer.getName() + "§3 connected to server §b" + Config.target + "§3. Queue count is " + playerQueue.size() + ". Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
                             } else {
-                                Main.log("queue", "§c§f" + finalPlayer.getName() + "s§c connection to server §b" + Config.target + "§c failed: " + error.getMessage());
+                                Main.log("queue", "§f" + finalPlayer.getName() + "s§c connection to server §b" + Config.target + "§c failed: " + error.getMessage());
                                 finalPlayer.sendMessage(TextComponent.fromLegacyText("§cConnection to " + Config.serverName + " failed!§r"));
                                 playerQueue.add(finalPlayer);
                             }
                         };
 
+                        // Clear the title
+                        if (Config.sendTitle) {
+                            sendTitle(player, " ", " ", 0, 0, 0);
+                        }
+
                         player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', Config.messageConnecting) + "§r"));
                         player.connect(targetServer, cb);
                     } else {
                         player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
-                        Main.log("queue", "§c§f" + player.getName() + "§c was disconnected because there was already a connection for this account to the server.");
+                        Main.log("queue", "§f" + player.getName() + "§c was disconnected because there was already a connection for this account to the server.");
                     }
                 }
             } catch (InterruptedException e) {
@@ -137,6 +139,12 @@ public class Queue implements Listener {
 
             player.sendMessage(TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', Config.messagePosition.replaceAll("%position%", Integer.toString(i))) + "§r"));
 
+            // Title in the center of the screen
+            if (Config.sendTitle) {
+                // 10 Seconds + 1 s buffer
+                sendTitle(player, " ", ChatColor.translateAlternateColorCodes('&', Config.messagePosition.replaceAll("%position%", Integer.toString(i))) + "§r", 0, 20 * 11, 0);
+            }
+
             i++;
         }
 
@@ -146,7 +154,7 @@ public class Queue implements Listener {
                 mutex.acquire();
                 playerQueue.remove(player);
 
-                Main.log("update", "§3§f" + player.getName() + "§3 was removed from the §dplayer queue§3 (wrong server or disconnected). Queue count is " + playerQueue.size() + ".");
+                Main.log("update", "§f" + player.getName() + "§3 was removed from the §dplayer queue§3 (wrong server or disconnected). Queue count is " + playerQueue.size() + ".");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
@@ -169,7 +177,7 @@ public class Queue implements Listener {
                 try {
                     mutex.acquire();
                     playerQueue.add(player);
-                    Main.log("connect", "§3§f" + player.getName() + "§3 was added to the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
+                    Main.log("connect", "§f" + player.getName() + "§3 was added to the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -194,7 +202,7 @@ public class Queue implements Listener {
                 try {
                     mutex.acquire();
                     playerQueue.remove(player);
-                    Main.log("disconnect", "§3§f" + player.getName() + "§3 was removed from the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
+                    Main.log("disconnect", "§f" + player.getName() + "§3 was removed from the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
                 } catch (InterruptedException e1) {
                     e1.printStackTrace();
                 } finally {
@@ -216,16 +224,15 @@ public class Queue implements Listener {
                 String reason = BaseComponent.toLegacyText(event.getKickReasonComponent());
                 ProxiedPlayer player = event.getPlayer();
 
+                // cancel the event, if one of the following:
+                // - kicking is not enabled
+                // - target is restarting (and restart kicks are disabled)
+                // - target is busy with connecting players (and busy kicks are disabled)
                 if (!Config.kickPassthrough
                         || (!Config.kickOnRestart && reason.toLowerCase().contains("server is restarting"))
                         || (!Config.kickOnRestart && reason.toLowerCase().contains("went down"))
                         || (!Config.kickOnBusy && reason.toLowerCase().contains("too many people logging in"))
                         || (!Config.kickOnBusy && reason.toLowerCase().contains("too fast re-login"))) {
-                    // cancel the event, if one of the following:
-                    // - kicking is not enabled
-                    // - target is restarting (and restart kicks are disabled)
-                    // - target is busy with connecting players (and busy kicks are disabled)
-
                     // save the disconnection time
                     kickedPlayers.put(player, Instant.now().getEpochSecond());
 
@@ -235,13 +242,13 @@ public class Queue implements Listener {
 
                     // send message
                     player.sendMessage(TextComponent.fromLegacyText("§6You were sent back to the queue for: §c" + reason.replaceAll("\n", " ") + "§r"));
-                    Main.log("kick", "§3§f" + player.getName() + "§3 was sent back to server §e" + Config.queue + "§3 after a disconnection (\"" + reason.replaceAll("\n", " ") + "§3\"). Kicked count is " + kickedPlayers.size() + ".");
+                    Main.log("kick", "§f" + player.getName() + "§3 was sent back to server §e" + Config.queue + "§3 after a disconnection (\"" + reason.replaceAll("\n", " ") + "§3\"). Kicked count is " + kickedPlayers.size() + ".");
 
                     // the player did not leave the queue, therefore the connect event is not triggered and
                     // a manual (re)adding to the player queue is required
                     if (player.getServer() != null && player.getServer().getInfo() == ProxyServer.getInstance().getServerInfo(Config.queue)) {
                         playerQueue.add(player);
-                        Main.log("kick", "§3§f" + player.getName() + "§3 was added to the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
+                        Main.log("kick", "§f" + player.getName() + "§3 was added to the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
                     }
                 } else {
                     // set the disconnect reason from the target server (not the bungee message)
@@ -263,9 +270,10 @@ public class Queue implements Listener {
     public void onServerConnect(ServerConnectEvent event) {
         ProxiedPlayer player = event.getPlayer();
 
-        // check if it's a "fresh" connection
+        // check if it's a "fresh" connection - stop bungee from handling server switching
         if (player.getServer() != null) {
             if (player.getServer().getInfo().equals(event.getTarget()))
+                // cancel the event and stop player from accessing another server, since this is done by the plugin
                 event.setCancelled(true);
 
             return;
@@ -279,7 +287,7 @@ public class Queue implements Listener {
 
             if (kickedPlayers.containsKey(player)) {
                 // player was sent back to the queue after a kick on a fresh connection
-                Main.log("connect", "§3§f" + player.getName() + "§3 was sent to server §e" + Config.queue + "§3 after a kick from server §b" + Config.target + "§3.");
+                Main.log("connect", "§f" + player.getName() + "§3 was sent to server §e" + Config.queue + "§3 after a kick from server §b" + Config.target + "§3.");
             } else if (mainServerInfo.isOnline && mainServerInfo.playerCount < Config.maxPlayers) {
                 // main server is online and player count is lower then max
                 ServerInfo targetServer = ProxyServer.getInstance().getServerInfo(Config.target);
@@ -287,10 +295,10 @@ public class Queue implements Listener {
                 if (isNotConnected(player, targetServer)) {
                     // direct connection
                     event.setTarget(targetServer);
-                    Main.log("connect", "§3§f" + player.getName() + "§3 was directly connected to server §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
+                    Main.log("connect", "§f" + player.getName() + "§3 was directly connected to server §b" + Config.target + "§3. Main count is " + (mainServerInfo.playerCount + 1) + " of " + Config.maxPlayers + ".");
                 } else {
                     player.disconnect(TextComponent.fromLegacyText("§cYou are already connected to " + Config.serverName + "!"));
-                    Main.log("connect", "§c§f" + player.getName() + "§c was disconnected because there was already a connection for this account to the server.");
+                    Main.log("connect", "§f" + player.getName() + "§c was disconnected because there was already a connection for this account to the server.");
                 }
             } else {
                 // Send full message
@@ -311,7 +319,7 @@ public class Queue implements Listener {
             // Remove Player from queue
             try {
                 mutex.acquire();
-                Main.log("disconnect", "§3§f" + player.getName() + "§3 was removed from the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
+                Main.log("disconnect", "§f" + player.getName() + "§3 was removed from the §dplayer queue§3. Queue count is " + playerQueue.size() + ".");
                 playerQueue.remove(player);
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
@@ -322,7 +330,30 @@ public class Queue implements Listener {
     }
 
     /**
-     * Test a Server Connection
+     * Sends a title and a subtitle message to the player.
+     *
+     * @param title    Title text
+     * @param subtitle Subtitle text
+     * @param fadeIn   Time in ticks for titles to fade in. Defaults to 10.
+     * @param stay     Time in ticks for titles to stay. Defaults to 70.
+     * @param fadeOut  Time in ticks for titles to fade out. Defaults to 20.
+     */
+    public void sendTitle(ProxiedPlayer player, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
+        try {
+            Title bungeeTitle = Main.getInstance().getProxy().createTitle();
+            bungeeTitle.title(TextComponent.fromLegacyText(title));
+            bungeeTitle.subTitle(TextComponent.fromLegacyText(subtitle));
+            bungeeTitle.fadeIn(fadeIn);
+            bungeeTitle.stay(stay);
+            bungeeTitle.fadeOut(fadeOut);
+            player.sendTitle(bungeeTitle);
+        } catch (Exception e) {
+            Main.log("sendTitle", "§cCould not send title to §f" + player.getName() + "§c: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test a Server Connection and return the server ping info
      */
     private static class ServerInfoGetter implements Callback<ServerPing> {
         public boolean done = false;

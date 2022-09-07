@@ -16,21 +16,21 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
 
 ### Config
 
-| Value                | Description                                              |
-|----------------------|----------------------------------------------------------|
-| target               | server name from bungee config                           |
-| queue                | server name from bungee config                           |
-| maxPlayers           | max players of target before players are queued          |
-| waitOnKick           | seconds to wait after a kick before reconnect            |
-| messagePosition      | player message, that shows his position in the queue     |
-| messageConnecting    | player message, when connecting to the target server     |
-| messageFullOrOffline | player message, when the target is full or offline       |
-| serverName           | target server name displayed to the player               |
-| kickPassthrough      | if false, players will be enqueued again                 |
-| kickOnRestart        | if true, players will be kicked when the target restarts |
-| kickOnBusy           | if true, players will be kicked if the target is busy    |
-| bStats               | if true, plugin metrics are enabled                      |
-
+| Value                | Description                                                  |
+|----------------------|--------------------------------------------------------------|
+| target               | server name from bungee config                               |
+| queue                | server name from bungee config                               |
+| maxPlayers           | max players of target before players are queued              |
+| waitOnKick           | seconds to wait after a kick before reconnect                |
+| messagePosition      | player message, that shows his position in the queue         |
+| messageConnecting    | player message, when connecting to the target server         |
+| messageFullOrOffline | player message, when the target is full or offline           |
+| serverName           | target server name displayed to the player                   |
+| kickPassthrough      | if false, players will be enqueued again                     |
+| kickOnRestart        | if true, players will be kicked when the target restarts     |
+| kickOnBusy           | if true, players will be kicked if the target is busy        |
+| bStats               | if true, plugin metrics are enabled                          |
+| senTitle             | should the position be displayed in the center of the screen |
 ### Versions
 
  - 1.* is for BungeeCord

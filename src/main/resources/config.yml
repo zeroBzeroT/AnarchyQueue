@@ -11,3 +11,4 @@ kickPassthrough: true
 kickOnRestart: false
 kickOnBusy: false
 bStats: true
+sendTitle: true
