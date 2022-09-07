@@ -1,4 +1,8 @@
-## AnarchyQueue
+# AnarchyQueue
+
+A simple queue system for **BungeeCord (and Velocity) Servers** in the style of the 2b2t queue.
+
+![logo](https://github.com/zeroBzeroT/AnarchyQueue/blob/main/logo.jpg?raw=true)
 
 [![discord](https://img.shields.io/discord/895546064260718622?logo=discord)](https://discord.0b0t.org)
 [![reddit](https://img.shields.io/reddit/subreddit-subscribers/0b0t)](https://old.reddit.com/r/0b0t/)
@@ -6,15 +10,11 @@
 ![code size](https://img.shields.io/github/languages/code-size/zeroBzeroT/AnarchyQueue)
 [![downloads](https://img.shields.io/github/downloads/zeroBzeroT/AnarchyQueue/total)](https://github.com/zeroBzeroT/AnarchyQueue/releases)
 
----
-
-A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t queue. 
-
-### Commands
+## Commands
 
 - **/maxplayers {count}**   gets or sets the capacity of the main server
 
-### Config
+## Config
 
 | Value                | Description                                                  |
 |----------------------|--------------------------------------------------------------|
@@ -31,12 +31,34 @@ A simple queue system for BungeeCord (and Velocity) in the style of the 2b2t que
 | kickOnBusy           | if true, players will be kicked if the target is busy        |
 | bStats               | if true, plugin metrics are enabled                          |
 | senTitle             | should the position be displayed in the center of the screen |
-### Versions
+
+## BungeeCord Config (Excerpt)
+
+```yml
+listeners:
+  forced_hosts:
+    your-server-domain.co.uk: queue
+  priorities:
+  - queue
+servers:
+  main:
+    motd: motd1
+    address: 127.0.0.1:port1
+  queue:
+    motd: motd2
+    address: 127.0.0.1:port2
+```
+
+## Versions
 
  - 1.* is for BungeeCord
  - 2.* is for Velocity
 
-### Warranty
+## Statistics
+
+![Graph](https://bstats.org/signatures/bungeecord/0b0t_AnarchyQueue.svg)
+
+## Warranty
 
 The Software is provided "as is" and without warranties of any kind, express
 or implied, including but not limited to the warranties of merchantability,
