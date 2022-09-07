@@ -1,6 +1,6 @@
 # AnarchyQueue
 
-A simple queue system for **BungeeCord (and Velocity) Servers** in the style of the 2b2t queue.
+A simple queue system for **BungeeCord Servers** in the style of the 2b2t queue.
 
 ![logo](https://github.com/zeroBzeroT/AnarchyQueue/blob/main/logo.jpg?raw=true)
 
@@ -9,6 +9,11 @@ A simple queue system for **BungeeCord (and Velocity) Servers** in the style of 
 ![last commit](https://img.shields.io/github/last-commit/zeroBzeroT/AnarchyQueue)
 ![code size](https://img.shields.io/github/languages/code-size/zeroBzeroT/AnarchyQueue)
 [![downloads](https://img.shields.io/github/downloads/zeroBzeroT/AnarchyQueue/total)](https://github.com/zeroBzeroT/AnarchyQueue/releases)
+
+## Details
+
+Connects players to a queue server instance when the main server is full or restarting. The player regularly receives information about their position in the queue.
+Use a plugin like [QueueServerPlugin](https://github.com/zeroBzeroT/QueueServerPlugin/) for the queue server instance.
 
 ## Commands
 
@@ -39,7 +44,7 @@ listeners:
   forced_hosts:
     your-server-domain.co.uk: queue
   priorities:
-  - queue
+    - queue
 servers:
   main:
     motd: motd1
@@ -48,11 +53,6 @@ servers:
     motd: motd2
     address: 127.0.0.1:port2
 ```
-
-## Versions
-
- - 1.* is for BungeeCord
- - 2.* is for Velocity
 
 ## Statistics
 
@@ -64,6 +64,6 @@ The Software is provided "as is" and without warranties of any kind, express
 or implied, including but not limited to the warranties of merchantability,
 fitness for a particular purpose, and non-infringement. In no event shall the
 Authors or copyright owners be liable for any claims, damages or other
-liability, whether in an action in contract, tort or otherwise, arising from, 
-out of or in connection with the Software or the use or other dealings in the 
+liability, whether in an action in contract, tort or otherwise, arising from,
+out of or in connection with the Software or the use or other dealings in the
 Software.
