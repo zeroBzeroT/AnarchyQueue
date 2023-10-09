@@ -17,7 +17,8 @@ Use a plugin like [QueueServerPlugin](https://github.com/zeroBzeroT/QueueServerP
 
 ## Commands
 
-- **/maxplayers {count}**   gets or sets the capacity of the main server
+- **/maxplayers {count}**   Gets or sets the capacity of the main server.
+- **/queue**   Displays current queue length.
 
 ## Config
 
@@ -35,7 +36,7 @@ Use a plugin like [QueueServerPlugin](https://github.com/zeroBzeroT/QueueServerP
 | kickOnRestart        | if true, players will be kicked when the target restarts     |
 | kickOnBusy           | if true, players will be kicked if the target is busy        |
 | bStats               | if true, plugin metrics are enabled                          |
-| senTitle             | should the position be displayed in the center of the screen |
+| sendTitle            | should the position be displayed in the center of the screen |
 
 ## BungeeCord Config (Excerpt)
 

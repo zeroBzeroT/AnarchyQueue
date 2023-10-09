@@ -43,6 +43,7 @@ public class Main extends Plugin {
 
         // Commands
         getProxy().getPluginManager().registerCommand(this, new SlotsCommand());
+        getProxy().getPluginManager().registerCommand(this, new QueueCommand(queue));
 
         // Listener
         getProxy().getPluginManager().registerListener(this, queue);

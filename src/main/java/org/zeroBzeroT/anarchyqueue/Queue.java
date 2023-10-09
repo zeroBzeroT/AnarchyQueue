@@ -353,6 +353,17 @@ public class Queue implements Listener {
     }
 
     /**
+     * Gets current queue length.
+     * @return Current length of the player queue
+     */
+    public int queueLength() {
+        if(playerQueue == null)
+            return -1;
+
+        return playerQueue.size();
+    }
+
+    /**
      * Test a Server Connection and return the server ping info
      */
     private static class ServerInfoGetter implements Callback<ServerPing> {
