@@ -55,7 +55,7 @@ public class Queue {
             return;
         }
         // skip if no players queued
-        if (queuedPlayers.size() == 0) return;
+        if (queuedPlayers.isEmpty()) return;
         // check main server reachability
         final RegisteredServer serverMain;
         try {
