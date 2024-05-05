@@ -57,9 +57,15 @@ tasks {
         dependsOn('build')
     }
     runServer {
-        runDirectory = layout.projectDirectory.dir('run').dir('server')
+        runDirectory = layout.projectDirectory.dir('run').dir('queue')
         minecraftVersion('1.20.4')
         systemProperty('com.mojang.eula.agree', 'true')
+        systemProperty('Paper.skipServerPropertiesComments', 'true')
+        downloadPlugins {
+            // TODO: QueueServerPlugin for 1.20.x
+            //github("zeroBzeroT", "QueueServerPlugin", "2.1.0", "QueuePlugin-2.1.0.jar")
+            github("dmulloy2", "ProtocolLib", "5.2.0", "ProtocolLib.jar")
+        }
         dependsOn('build')
     }
 }
