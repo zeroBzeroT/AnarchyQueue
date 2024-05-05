@@ -14,7 +14,7 @@ import java.nio.file.Path;
 @Plugin(
     id = "anarchyqueue",
     name = "AnarchyQueue",
-    version = "2.0.0-SNAPSHOT",
+    version = BuildConstants.VERSION,
     description = "velocity queue system for anarchy servers",
     url = "https://github.com/zeroBzeroT/AnarchyQueue",
     authors = {"bierdosenhalter", "nothub"}

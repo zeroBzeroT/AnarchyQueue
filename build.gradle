@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'org.jetbrains.gradle.plugin.idea-ext' version '1.0.1'
+    id 'xyz.jpenilla.run-paper' version '2.3.0'
+    id 'xyz.jpenilla.run-velocity' version '2.2.0'
+}
+
+group = 'org.zeroBzeroT'
+version = "${project.plugin_version}"
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://repo.papermc.io/repository/maven-public/'
+        content {
+            includeGroup 'com.velocitypowered'
+        }
+    }
+}
+
+dependencies {
+    compileOnly group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
+    annotationProcessor group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+tasks.withType(JavaCompile).configureEach {
+    it.sourceCompatibility = it.targetCompatibility = JavaVersion.toVersion(17)
+    it.options.release = 17
+    it.options.encoding = 'UTF-8'
+}
+
+// template file for compile-time value injection
+def templateSource = file('src/main/templates')
+def templateDest = layout.buildDirectory.dir('generated/sources/templates')
+def generateTemplates = tasks.register('generateTemplates', Copy) { task ->
+    def props = ['version': project.version]
+    task.inputs.properties props
+    task.from templateSource
+    task.into templateDest
+    task.expand props
+}
+sourceSets.main.java.srcDir(generateTemplates.map { it.outputs })
+
+// put jar artifact in build/dist/
+jar.destinationDirectory.set(layout.buildDirectory.dir('dist'))
+
+// test setup
+runPaper.disablePluginJarDetection()
+tasks {
+    runVelocity {
+        runDirectory = layout.projectDirectory.dir('run').dir('proxy')
+        velocityVersion("${project.velocity_api_version}")
+        dependsOn('build')
+    }
+    runServer {
+        runDirectory = layout.projectDirectory.dir('run').dir('server')
+        minecraftVersion('1.20.4')
+        systemProperty('com.mojang.eula.agree', 'true')
+        dependsOn('build')
+    }
+}
+
+// eclipse + intellij hooks for generating template files
+project.eclipse.synchronizationTasks(generateTemplates)
+rootProject.idea.project.settings.taskTriggers.afterSync generateTemplates
