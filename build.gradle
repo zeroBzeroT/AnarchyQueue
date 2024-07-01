@@ -25,11 +25,11 @@ dependencies {
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 tasks.withType(JavaCompile).configureEach {
-    it.sourceCompatibility = it.targetCompatibility = JavaVersion.toVersion(17)
-    it.options.release = 17
+    it.sourceCompatibility = it.targetCompatibility = JavaVersion.toVersion(21)
+    it.options.release = 21
     it.options.encoding = 'UTF-8'
 }
 
@@ -58,7 +58,7 @@ tasks {
     }
     runServer {
         runDirectory = layout.projectDirectory.dir('run').dir('queue')
-        minecraftVersion('1.20.4')
+        minecraftVersion('1.20.6')
         systemProperty('com.mojang.eula.agree', 'true')
         systemProperty('Paper.skipServerPropertiesComments', 'true')
         downloadPlugins {
