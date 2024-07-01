@@ -62,9 +62,8 @@ tasks {
         systemProperty('com.mojang.eula.agree', 'true')
         systemProperty('Paper.skipServerPropertiesComments', 'true')
         downloadPlugins {
-            // TODO: QueueServerPlugin for 1.20.x
-            //github("zeroBzeroT", "QueueServerPlugin", "2.1.0", "QueuePlugin-2.1.0.jar")
-            github("dmulloy2", "ProtocolLib", "5.2.0", "ProtocolLib.jar")
+            github("zeroBzeroT", "QueueServerPlugin", "3.0.0-SNAPSHOT", "queueplugin-3.0.0-SNAPSHOT+1.20.6-paper.jar")
+            url("https://ci.dmulloy2.net/job/ProtocolLib/723/artifact/build/libs/ProtocolLib.jar")
         }
         dependsOn('build')
     }
