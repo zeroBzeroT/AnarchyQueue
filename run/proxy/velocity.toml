@@ -132,6 +132,7 @@ log-player-connections = true
 
 # Allows players transferred from other hosts via the
 # Transfer packet (Minecraft 1.20.5) to be received.
+# TODO: is this required by something we use?
 accepts-transfers = false
 
 [query]
