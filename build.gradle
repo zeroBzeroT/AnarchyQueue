@@ -57,16 +57,27 @@ tasks {
         dependsOn('build')
     }
     runServer {
-        runDirectory = layout.projectDirectory.dir('run').dir('queue')
-        minecraftVersion('1.20.6')
-        systemProperty('com.mojang.eula.agree', 'true')
-        systemProperty('Paper.skipServerPropertiesComments', 'true')
-        downloadPlugins {
-            github("zeroBzeroT", "QueueServerPlugin", "3.0.0-SNAPSHOT", "queueplugin-3.0.0-SNAPSHOT+1.20.6-paper.jar")
-            url("https://ci.dmulloy2.net/job/ProtocolLib/723/artifact/build/libs/ProtocolLib.jar")
-        }
-        dependsOn('build')
     }
+}
+
+tasks.register('runServerMain', runServer.getClass()) {
+    minecraftVersion("${project.minecraft_version}")
+    systemProperty('com.mojang.eula.agree', 'true')
+    systemProperty('Paper.skipServerPropertiesComments', 'true')
+    runDirectory = layout.projectDirectory.dir('run').dir('main')
+    dependsOn('build')
+}
+
+tasks.register('runServerQueue', runServer.getClass()) {
+    minecraftVersion("${project.minecraft_version}")
+    systemProperty('com.mojang.eula.agree', 'true')
+    systemProperty('Paper.skipServerPropertiesComments', 'true')
+    runDirectory = layout.projectDirectory.dir('run').dir('queue')
+    downloadPlugins {
+        github("zeroBzeroT", "QueueServerPlugin", "3.0.0-SNAPSHOT", "queueplugin-3.0.0-SNAPSHOT+1.20.6-paper.jar")
+        url("https://ci.dmulloy2.net/job/ProtocolLib/723/artifact/build/libs/ProtocolLib.jar")
+    }
+    dependsOn('build')
 }
 
 // eclipse + intellij hooks for generating template files
