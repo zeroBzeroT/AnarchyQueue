@@ -17,6 +17,9 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 
+// velocity api event docs:
+// https://jd.papermc.io/velocity/3.3.0/com/velocitypowered/api/event/package-summary.html
+
 public class Queue {
 
     private final Logger log;
