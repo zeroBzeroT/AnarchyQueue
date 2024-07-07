@@ -56,8 +56,6 @@ tasks {
         velocityVersion("${project.velocity_api_version}")
         dependsOn('build')
     }
-    runServer {
-    }
 }
 
 tasks.register('runServerMain', runServer.getClass()) {
