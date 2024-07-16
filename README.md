@@ -18,6 +18,13 @@ Connects players to a queue server instance when the main server is full or rest
 information about their position in the queue.
 Use a plugin like [QueueServerPlugin](https://github.com/zeroBzeroT/QueueServerPlugin/) for the queue server instance.
 
+## Versions
+
+| git                                                                  | version       | sw       |
+|----------------------------------------------------------------------|---------------|----------|
+| [velocity](https://github.com/zeroBzeroT/AnarchyQueue/tree/velocity) | 3.x.x         | velocity |
+| [main](https://github.com/zeroBzeroT/AnarchyQueue/tree/main)         | 1.x.x - 2.x.x | bungee   |
+
 ## Statistics
 
 ![Graph](https://bstats.org/signatures/bungeecord/0b0t_AnarchyQueue.svg)
