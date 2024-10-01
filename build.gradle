@@ -3,7 +3,7 @@ plugins {
     id 'eclipse'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.0.1'
     id 'xyz.jpenilla.run-paper' version '2.3.1'
-    id 'xyz.jpenilla.run-velocity' version '2.2.0'
+    id 'xyz.jpenilla.run-velocity' version '2.3.1'
 }
 
 group = 'org.zeroBzeroT'
