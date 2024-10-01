@@ -9,16 +9,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Config {
-
     public static String serverMain = null;
+
     public static String serverQueue = null;
+
     public static String name = null; // TODO: not in use, implement or remove this
+
     public static int maxPlayers = 0;
+
     public static String messagePosition = null;
+
     public static String messageConnecting = null;
+
     public static String messageFull = null;
+
     public static String messageOffline = null;
+
     public static boolean kick = true; // TODO: not in use, implement or remove this
+
     public static int waitOnKick = 0; // TODO: not in use, implement or remove this
 
     /**
@@ -27,7 +35,6 @@ public class Config {
      * @param path Path to the plugin data folder
      */
     static void loadConfig(Path path) throws IOException {
-
         File file = new File(path.toFile(), "config.toml");
 
         if (!file.getParentFile().exists()) {
@@ -58,7 +65,5 @@ public class Config {
         messageOffline = toml.getString("message-offline", "Server is currently down!");
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
-
     }
-
 }

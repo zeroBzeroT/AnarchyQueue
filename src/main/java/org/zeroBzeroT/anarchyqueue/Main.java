@@ -19,13 +19,14 @@ import java.nio.file.Path;
     url = "https://github.com/zeroBzeroT/AnarchyQueue",
     authors = {"bierdosenhalter", "nothub"}
 )
-public class Main {
 
+public class Main {
     private static Main instance;
 
     public final Logger log;
 
     private final ProxyServer server;
+
     private final Path dataDir;
 
     @Inject
@@ -37,7 +38,9 @@ public class Main {
     }
 
     public static Main getInstance() {
-        if (instance == null) throw new IllegalStateException("instance was null!");
+        if (instance == null)
+            throw new IllegalStateException("instance was null!");
+
         return instance;
     }
 
@@ -51,9 +54,9 @@ public class Main {
             server.shutdown();
             return;
         }
+
         // Register queue
         Queue queue = new Queue(server);
         server.getEventManager().register(this, queue);
     }
-
 }
