@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 
 // velocity api event docs:
 // https://jd.papermc.io/velocity/3.3.0/com/velocitypowered/api/event/package-summary.html
@@ -24,6 +25,8 @@ public class Queue {
     private final Logger log;
 
     private final ProxyServer proxyServer;
+
+    private final Semaphore processSemaphore = new Semaphore(1);
 
     /**
      * We don't use ConcurrentLinkedQueue for this because we want index-based access to players.
@@ -52,6 +55,8 @@ public class Queue {
     }
 
     public void process() {
+        if (!processSemaphore.tryAcquire()) return;
+
         // check queue server reachability
         final RegisteredServer serverQueue;
 
@@ -113,6 +118,8 @@ public class Queue {
                             queuedPlayers.removeFirst();
                         }
                 );
+
+        processSemaphore.release();
     }
 
     private void sendInfo(RegisteredServer serverQueue, boolean full) {
