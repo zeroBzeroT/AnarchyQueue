@@ -9,3 +9,4 @@ message-full = "Server is currently full!"
 message-offline = "Server is currently down!"
 kick = true
 wait-on-kick = 16
+join-delay = 2000

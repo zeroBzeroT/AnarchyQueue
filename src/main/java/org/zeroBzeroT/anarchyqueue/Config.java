@@ -29,6 +29,8 @@ public class Config {
 
     public static int waitOnKick = 0; // TODO: not in use, implement or remove this
 
+    public static long joinDelay = 0;
+
     /**
      * Load the config from the plugin data folder
      *
@@ -65,5 +67,6 @@ public class Config {
         messageOffline = toml.getString("message-offline", "Server is currently down!");
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
+        joinDelay = toml.getLong("join-delay", 0L);
     }
 }

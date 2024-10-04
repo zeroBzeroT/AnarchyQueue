@@ -31,7 +31,7 @@ public class Queue {
     /**
      * We don't use ConcurrentLinkedQueue for this because we want index-based access to players.
      */
-    private final List<Player> queuedPlayers = new CopyOnWriteArrayList<>();
+    private final List<QueuedPlayer> queuedPlayers = new CopyOnWriteArrayList<>();
 
     public Queue(ProxyServer proxyServer) {
         this.log = Main.getInstance().log;
@@ -51,7 +51,7 @@ public class Queue {
             return;
 
         log.info("Queuing " + e.getPlayer().getUsername() + " (" + e.getPlayer().getUniqueId().toString() + ")");
-        queuedPlayers.add(e.getPlayer());
+        queuedPlayers.add(new QueuedPlayer(e.getPlayer(), System.currentTimeMillis()));
     }
 
     public void process() {
@@ -97,8 +97,14 @@ public class Queue {
         if (full)
             return;
 
+        QueuedPlayer currPlayer = queuedPlayers.getFirst();
+
+        //wait till delay has passed
+        if (currPlayer.joinTime() + Config.joinDelay > System.currentTimeMillis())
+            return;
+
         // connect next player
-        UUID uuid = queuedPlayers.getFirst().getUniqueId();
+        UUID uuid = currPlayer.player().getUniqueId();
 
         log.info("Processing " + uuid.toString());
 
@@ -114,7 +120,7 @@ public class Queue {
                             }
                         },
                         () -> {
-                            log.error("Unable to connect " + queuedPlayers.getFirst().getUsername() + "(" + queuedPlayers.getFirst().getUniqueId().toString() + ") to " + Config.serverMain + ": player is not connected to " + serverQueue.getServerInfo().getName());
+                            log.error("Unable to connect " + currPlayer.player().getUsername() + "(" + currPlayer.player().getUniqueId().toString() + ") to " + Config.serverMain + ": player is not connected to " + serverQueue.getServerInfo().getName());
                             queuedPlayers.removeFirst();
                         }
                 );
@@ -126,6 +132,7 @@ public class Queue {
         for (int i = 0; i < queuedPlayers.size(); i++) {
             queuedPlayers
                     .get(i)
+                    .player()
                     .sendMessage(Identity.nil(), Component.text(
                             Config.messagePosition + (i + 1) + "/" + queuedPlayers.size()
                     ));
