@@ -57,75 +57,77 @@ public class Queue {
     public void process() {
         if (!processSemaphore.tryAcquire()) return;
 
-        // check queue server reachability
-        final RegisteredServer serverQueue;
-
         try {
-            serverQueue = getServer(Config.serverQueue);
-        } catch (ServerNotReachableException e) {
-            log.warn(e.getMessage());
-            return;
-        }
+            // check queue server reachability
+            final RegisteredServer serverQueue;
 
-        // skip if no players queued
-        if (queuedPlayers.isEmpty())
-            return;
-
-        // check the main server reachability
-        final RegisteredServer serverMain;
-
-        try {
-            serverMain = getServer(Config.serverMain);
-        } catch (ServerNotReachableException e) {
-            if (Instant.now().getEpochSecond() % 10 == 0) {
-                serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                        queuedPlayer.sendMessage(Identity.nil(), Component.text(
-                                Config.messageOffline
-                        )));
+            try {
+                serverQueue = getServer(Config.serverQueue);
+            } catch (ServerNotReachableException e) {
+                log.warn(e.getMessage());
+                return;
             }
-            return;
-        }
 
-        // check main server full
-        boolean full = serverMain.getPlayersConnected().size() >= Config.maxPlayers;
+            // skip if no players queued
+            if (queuedPlayers.isEmpty())
+                return;
 
-        // send info every 10 seconds
-        if (Instant.now().getEpochSecond() % 10 == 0) {
-            sendInfo(serverQueue, full);
-        }
+            // check the main server reachability
+            final RegisteredServer serverMain;
 
-        if (full)
-            return;
+            try {
+                serverMain = getServer(Config.serverMain);
+            } catch (ServerNotReachableException e) {
+                if (Instant.now().getEpochSecond() % 10 == 0) {
+                    serverQueue.getPlayersConnected().forEach(queuedPlayer ->
+                            queuedPlayer.sendMessage(Identity.nil(), Component.text(
+                                    Config.messageOffline
+                            )));
+                }
+                return;
+            }
 
-        QueuedPlayer currPlayer = queuedPlayers.getFirst();
+            // check main server full
+            boolean full = serverMain.getPlayersConnected().size() >= Config.maxPlayers;
 
-        //wait till delay has passed
-        if (currPlayer.joinTime() + Config.joinDelay > System.currentTimeMillis())
-            return;
+            // send info every 10 seconds
+            if (Instant.now().getEpochSecond() % 10 == 0) {
+                sendInfo(serverQueue, full);
+            }
 
-        // connect next player
-        UUID uuid = currPlayer.player().getUniqueId();
+            if (full)
+                return;
 
-        log.info("Processing " + uuid.toString());
+            QueuedPlayer currPlayer = queuedPlayers.getFirst();
 
-        // lookup player from queue server and ping to be safe the player is connected
-        serverQueue.getPlayersConnected().stream()
-                .filter(p -> p.getUniqueId().equals(uuid))
-                .findAny().ifPresentOrElse(p -> {
-                            p.sendMessage(Identity.nil(), Component.text(Config.messageConnecting));
-                            try {
-                                if (p.createConnectionRequest(serverMain).connect().get().isSuccessful()) queuedPlayers.removeFirst();
-                            } catch (InterruptedException | ExecutionException e) {
-                                log.error("Unable to connect " + p.getUsername() + "(" + p.getUniqueId().toString() + ") to " + Config.serverMain + ": " + e.getMessage());
+            //wait till delay has passed
+            if (currPlayer.joinTime() + Config.joinDelay > System.currentTimeMillis())
+                return;
+
+            // connect next player
+            UUID uuid = currPlayer.player().getUniqueId();
+
+            log.info("Processing " + uuid.toString());
+
+            // lookup player from queue server and ping to be safe the player is connected
+            serverQueue.getPlayersConnected().stream()
+                    .filter(p -> p.getUniqueId().equals(uuid))
+                    .findAny().ifPresentOrElse(p -> {
+                                p.sendMessage(Identity.nil(), Component.text(Config.messageConnecting));
+                                try {
+                                    if (p.createConnectionRequest(serverMain).connect().get().isSuccessful()) queuedPlayers.removeFirst();
+                                } catch (InterruptedException | ExecutionException e) {
+                                    log.error("Unable to connect " + p.getUsername() + "(" + p.getUniqueId().toString() + ") to " + Config.serverMain + ": " + e.getMessage());
+                                }
+                            },
+                            () -> {
+                                log.error("Unable to connect " + currPlayer.player().getUsername() + "(" + currPlayer.player().getUniqueId().toString() + ") to " + Config.serverMain + ": player is not connected to " + serverQueue.getServerInfo().getName());
+                                queuedPlayers.removeFirst();
                             }
-                        },
-                        () -> {
-                            log.error("Unable to connect " + currPlayer.player().getUsername() + "(" + currPlayer.player().getUniqueId().toString() + ") to " + Config.serverMain + ": player is not connected to " + serverQueue.getServerInfo().getName());
-                            queuedPlayers.removeFirst();
-                        }
-                );
-
-        processSemaphore.release();
+                    );
+        } finally {
+            processSemaphore.release();
+        }
     }
 
     private void sendInfo(RegisteredServer serverQueue, boolean full) {
