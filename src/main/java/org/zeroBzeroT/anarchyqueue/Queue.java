@@ -139,8 +139,6 @@ public class Queue {
             // connect next player
             UUID uuid = currPlayer.player().getUniqueId();
 
-            log.info("Processing " + uuid.toString());
-
             // lookup player from queue server and ping to be safe the player is connected
             QueuedPlayer finalCurrPlayer = currPlayer;
 
