@@ -7,30 +7,30 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import org.slf4j.Logger;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 
 import java.nio.file.Path;
 
 @Plugin(
-    id = "anarchyqueue",
-    name = "AnarchyQueue",
-    version = BuildConstants.VERSION,
-    description = "velocity queue system for anarchy servers",
-    url = "https://github.com/zeroBzeroT/AnarchyQueue",
-    authors = {"bierdosenhalter", "nothub"}
+        id = "anarchyqueue",
+        name = "AnarchyQueue",
+        version = BuildConstants.VERSION,
+        description = "velocity queue system for anarchy servers",
+        url = "https://github.com/zeroBzeroT/AnarchyQueue",
+        authors = {"bierdosenhalter", "nothub"}
 )
 
 public class Main {
     private static Main instance;
 
-    public final Logger log;
+    public final ComponentLogger log;
 
     private final ProxyServer server;
 
     private final Path dataDir;
 
     @Inject
-    public Main(ProxyServer server, CommandManager commandManager, Logger logger, @DataDirectory final Path dataDir) {
+    public Main(ProxyServer server, CommandManager commandManager, ComponentLogger logger, @DataDirectory final Path dataDir) {
         this.server = server;
         this.log = logger;
         this.dataDir = dataDir;

@@ -1,39 +1,38 @@
 package org.zeroBzeroT.anarchyqueue;
 
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import org.slf4j.Logger;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+
+import static org.zeroBzeroT.anarchyqueue.Components.mm;
 
 // velocity api event docs:
 // https://jd.papermc.io/velocity/3.3.0/com/velocitypowered/api/event/package-summary.html
 
 public class Queue {
-    private final Logger log;
+    private final ComponentLogger log;
 
     private final ProxyServer proxyServer;
 
     private final Semaphore queueSemaphore = new Semaphore(1);
 
-    /**
-     * We don't use ConcurrentLinkedQueue for this because we want index-based access to players.
-     */
-    private final List<QueuedPlayer> queuedPlayers = new CopyOnWriteArrayList<>();
+    private final Deque<QueuedPlayer> queuedPlayers = new LinkedList<>();
 
     /**
-     * Initializes a queue
+     * Initializes the queue.
      */
     public Queue(ProxyServer proxyServer) {
         this.log = Main.getInstance().log;
@@ -48,24 +47,23 @@ public class Queue {
     }
 
     /**
-     * This event is called once a connection to a server is fully operational.
-     * Add a Player to the queue if they join the queue server.
+     * This event is fired once the player has successfully connected to the
+     * target server and the connection to the previous server has been de-established.
      */
     @Subscribe
-    public void onServerConnectedEvent(ServerConnectedEvent e) {
-        if (!e.getServer().getServerInfo().getName().equals(Config.serverQueue))
+    public void onServerConnected(ServerConnectedEvent event) {
+        if (!event.getServer().getServerInfo().getName().equals(Config.serverQueue))
             return;
 
-        var queuedPlayer = new QueuedPlayer(e.getPlayer(), System.currentTimeMillis());
-
-        if (queuedPlayers.contains(queuedPlayer))
+        // stop adding the player several times
+        if (queuedPlayers.stream().anyMatch(p -> p.player() == event.getPlayer()))
             return;
 
         // Add Player to queue
         try {
             queueSemaphore.acquire();
-            queuedPlayers.add(queuedPlayer);
-            log.info("\u00A7f" + e.getPlayer().getUsername() + "\u00A73 was added to the §dplayer queue\u00A73. Queue count is " + queuedPlayers.size() + ".");
+            queuedPlayers.add(new QueuedPlayer(event.getPlayer(), System.currentTimeMillis()));
+            log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was added to the <light_purple>queue<dark_aqua>. Queue count is " + queuedPlayers.size() + "."));
         } catch (InterruptedException e1) {
             e1.printStackTrace();
         } finally {
@@ -74,9 +72,21 @@ public class Queue {
     }
 
     /**
-     * Try to connect one player to the server
+     * Fired when a player is kicked from a server.
+     */
+    @Subscribe
+    public void onKickedFromServer(KickedFromServerEvent event) {
+        log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was kicked from <light_purple>" + event.getServer().getServerInfo().getName() + "<dark_aqua> for <light_purple>").append(event.getServerKickReason().isPresent() ? event.getServerKickReason().get() : mm("<empty>")).append(mm("<dark_aqua>.")));
+    }
+
+    /**
+     * Try to connect one player to the server.
      */
     public void flushQueue() {
+        // Ignore if queue is empty
+        if (queuedPlayers.isEmpty())
+            return;
+
         // check queue server reachability
         final RegisteredServer serverQueue;
 
@@ -87,10 +97,6 @@ public class Queue {
             return;
         }
 
-        // Ignore if queue is empty
-        if (queuedPlayers.isEmpty())
-            return;
-
         // check the main server reachability
         final RegisteredServer serverMain;
 
@@ -98,11 +104,9 @@ public class Queue {
             serverMain = getServer(Config.serverMain);
         } catch (ServerNotReachableException e) {
             if (Instant.now().getEpochSecond() % 10 == 0) {
-                serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                        queuedPlayer.sendMessage(Identity.nil(), Component.text(
-                                Config.messageOffline
-                        )));
+                serverQueue.getPlayersConnected().forEach(queuedPlayer -> queuedPlayer.sendMessage(Component.text(Config.messageOffline)));
             }
+
             return;
         }
 
@@ -145,21 +149,21 @@ public class Queue {
             serverQueue.getPlayersConnected().stream()
                     .filter(p -> p.getUniqueId().equals(uuid))
                     .findAny().ifPresentOrElse(p -> {
-                                p.sendMessage(Identity.nil(), Component.text(Config.messageConnecting));
+                                p.sendMessage(Component.text(Config.messageConnecting));
                                 try {
                                     if (p.createConnectionRequest(serverMain).connect().get().isSuccessful()) {
                                         queuedPlayers.removeFirst();
-                                        log.info("\u00A7f" + p.getUsername() + "\u00A73 connected to server §b" + serverMain.getServerInfo().getName() + "\u00A73. Queue count is " + serverQueue.getPlayersConnected().size() + ". Main count is " + (serverMain.getPlayersConnected().size()) + " of " + Config.maxPlayers + ".");
+                                        log.info(mm("<white>" + p.getUsername() + "<dark_aqua> connected to server <aqua>" + serverMain.getServerInfo().getName() + "<dark_aqua>. Queue count is " + serverQueue.getPlayersConnected().size() + ". Main count is " + (serverMain.getPlayersConnected().size()) + " of " + Config.maxPlayers + "."));
                                     }
                                 } catch (InterruptedException | ExecutionException e) {
-                                    log.error("\u00A7f" + p.getUsername() + "s\u00A7c connection to server §b" + Config.serverMain + "\u00A7c failed: " + e.getMessage());
+                                    log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.serverMain + "<red> failed: " + e.getMessage()));
                                     // FIXME: requeue
                                     queuedPlayers.removeFirst();
                                     queuedPlayers.add(new QueuedPlayer(finalCurrPlayer.player(), System.currentTimeMillis()));
                                 }
                             },
                             () -> {
-                                log.error("\u00A7f" + finalCurrPlayer.player().getUsername() + "s\u00A7c connection to server §b" + Config.serverMain + "\u00A7c failed: player is not connected to " + serverQueue.getServerInfo().getName());
+                                log.error(mm("<white>" + finalCurrPlayer.player().getUsername() + "s<red> connection to server <aqua>" + Config.serverMain + "<red> failed: player is not connected to " + serverQueue.getServerInfo().getName()));
                                 queuedPlayers.removeFirst();
                             }
                     );
@@ -171,25 +175,20 @@ public class Queue {
     }
 
     private void sendInfo(RegisteredServer serverQueue, boolean full) {
-        for (int i = 0; i < queuedPlayers.size(); i++) {
-            queuedPlayers
-                    .get(i)
-                    .player()
-                    .sendMessage(Identity.nil(), Component.text(
-                            Config.messagePosition + (i + 1) + "/" + queuedPlayers.size()
-                    ));
+        int i = 1;
+
+        for (QueuedPlayer player : queuedPlayers) {
+            player.player().sendMessage(Component.text(Config.messagePosition + (i + 1) + "/" + queuedPlayers.size()));
+            i++;
         }
 
         if (full) {
-            serverQueue.getPlayersConnected().forEach(queuedPlayer ->
-                    queuedPlayer.sendMessage(Identity.nil(), Component.text(
-                            Config.messageFull
-                    )));
+            serverQueue.getPlayersConnected().forEach(queuedPlayer -> queuedPlayer.sendMessage(Component.text(Config.messageFull)));
         }
     }
 
     private RegisteredServer getServer(String name) throws ServerNotReachableException {
-        // get server configured in velocity.toml by name
+        // Get server configured in velocity.toml by name
         Optional<RegisteredServer> serverOpt = proxyServer.getServer(name);
 
         if (serverOpt.isEmpty()) {
@@ -198,7 +197,7 @@ public class Queue {
 
         final RegisteredServer server = serverOpt.get();
 
-        // test server availability by pinging
+        // Test server availability by pinging
         try {
             server.ping().get();
         } catch (InterruptedException | ExecutionException e) {
