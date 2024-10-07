@@ -20,10 +20,10 @@ Use a plugin like [QueueServerPlugin](https://github.com/zeroBzeroT/QueueServerP
 
 ## Versions
 
-| git                                                                          | version       | sw                   |
-|------------------------------------------------------------------------------|---------------|----------------------|
-| [velocity](https://github.com/zeroBzeroT/AnarchyQueue/tree/velocity)         | 3.x.x         | velocity             |
-| [main](https://github.com/zeroBzeroT/AnarchyQueue/tree/waterfall_deprecated) | 1.x.x - 2.x.x | waterfall_deprecated |
+| git                                                                                          | version       | sw                   |
+|----------------------------------------------------------------------------------------------|---------------|----------------------|
+| [velocity](https://github.com/zeroBzeroT/AnarchyQueue/tree/velocity)                         | 3.x.x         | velocity             |
+| [waterfall_deprecated](https://github.com/zeroBzeroT/AnarchyQueue/tree/waterfall_deprecated) | 1.x.x - 2.x.x | waterfall_deprecated |
 
 ## Statistics
 
