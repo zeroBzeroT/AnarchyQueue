@@ -9,9 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Config {
-    public static String serverMain = null;
+    public static String target = null;
 
-    public static String serverQueue = null;
+    public static String queue = null;
 
     public static String name = null; // TODO: not in use, implement or remove this
 
@@ -21,15 +21,13 @@ public class Config {
 
     public static String messageConnecting = null;
 
-    public static String messageFull = null;
+    public static String messageFull = null; // TODO: not in use, implement or remove this
 
-    public static String messageOffline = null;
+    public static String messageOffline = null; // TODO: not in use, implement or remove this
 
-    public static boolean kick = true; // TODO: not in use, implement or remove this
+    public static boolean kick = true;
 
-    public static int waitOnKick = 0; // TODO: not in use, implement or remove this
-
-    public static long joinDelay = 0;
+    public static int waitOnKick = 16;
 
     /**
      * Load the config from the plugin data folder
@@ -57,8 +55,8 @@ public class Config {
         }
 
         Toml toml = new Toml().read(file);
-        serverMain = toml.getString("server-main", "main");
-        serverQueue = toml.getString("server-queue", "queue");
+        target = toml.getString("target", "main");
+        queue = toml.getString("queue", "queue");
         name = toml.getString("name", "0b0t");
         maxPlayers = toml.getLong("max-players", 420L).intValue();
         messagePosition = toml.getString("message-position", "Position in queue: ");
@@ -67,6 +65,5 @@ public class Config {
         messageOffline = toml.getString("message-offline", "Server is currently down!");
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
-        joinDelay = toml.getLong("join-delay", 0L);
     }
 }

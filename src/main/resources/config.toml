@@ -1,12 +1,10 @@
-# ${project.artifactId} v${project.version}
-server-main = "main"
-server-queue = "queue"
+target = "main"
+queue = "queue"
 name = "0b0t"
 max-players = 420
-message-position = "Position in queue: "
-message-connecting = "Connecting to the server..."
-message-full = "Server is currently full!"
-message-offline = "Server is currently down!"
+message-position = "<gold>Position in queue: <bold>%position%<reset>"
+message-connecting = "<gold>Connecting to the server...<reset>"
+message-full = "<red>Server is currently full!<reset>"
+message-offline = "<red>Server is currently down!<reset>"
 kick = true
 wait-on-kick = 16
-join-delay = 2000

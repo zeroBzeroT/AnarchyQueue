@@ -3,6 +3,7 @@ package org.zeroBzeroT.anarchyqueue;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.Component;
@@ -10,10 +11,7 @@ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
@@ -27,9 +25,11 @@ public class Queue {
 
     private final ProxyServer proxyServer;
 
-    private final Semaphore queueSemaphore = new Semaphore(1);
+    private final Semaphore mutex = new Semaphore(1);
 
-    private final Deque<QueuedPlayer> queuedPlayers = new LinkedList<>();
+    private final Deque<Player> playerQueue;
+
+    private final HashMap<Player, Long> kickedPlayers;
 
     /**
      * Initializes the queue.
@@ -37,12 +37,28 @@ public class Queue {
     public Queue(ProxyServer proxyServer) {
         this.log = Main.getInstance().log;
         this.proxyServer = proxyServer;
+        playerQueue = new LinkedList<>();
+        kickedPlayers = new HashMap<>();
 
         // Schedule queue flusher
         proxyServer.getScheduler()
                 .buildTask(Main.getInstance(), this::flushQueue)
                 .delay(Duration.ofSeconds(1))
                 .repeat(Duration.ofSeconds(2))
+                .schedule();
+
+        // Schedule player notification
+        proxyServer.getScheduler()
+                .buildTask(Main.getInstance(), this::sendUpdate)
+                .delay(Duration.ofSeconds(1))
+                .repeat(Duration.ofSeconds(10))
+                .schedule();
+
+        // Schedule kicked players cool down
+        proxyServer.getScheduler()
+                .buildTask(Main.getInstance(), () -> kickedPlayers.entrySet().removeIf(pair -> pair.getValue() + Config.waitOnKick < Instant.now().getEpochSecond()))
+                .delay(Duration.ofSeconds(0))
+                .repeat(Duration.ofSeconds(1))
                 .schedule();
     }
 
@@ -52,22 +68,22 @@ public class Queue {
      */
     @Subscribe
     public void onServerConnected(ServerConnectedEvent event) {
-        if (!event.getServer().getServerInfo().getName().equals(Config.serverQueue))
+        if (!event.getServer().getServerInfo().getName().equals(Config.queue))
             return;
 
         // stop adding the player several times
-        if (queuedPlayers.stream().anyMatch(p -> p.player() == event.getPlayer()))
+        if (playerQueue.contains(event.getPlayer()))
             return;
 
         // Add Player to queue
         try {
-            queueSemaphore.acquire();
-            queuedPlayers.add(new QueuedPlayer(event.getPlayer(), System.currentTimeMillis()));
-            log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was added to the <light_purple>queue<dark_aqua>. Queue count is " + queuedPlayers.size() + "."));
+            mutex.acquire();
+            playerQueue.add(event.getPlayer());
+            log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was added to the <light_purple>queue<dark_aqua>. Queue count is " + playerQueue.size() + "."));
         } catch (InterruptedException e1) {
             e1.printStackTrace();
         } finally {
-            queueSemaphore.release();
+            mutex.release();
         }
     }
 
@@ -76,7 +92,31 @@ public class Queue {
      */
     @Subscribe
     public void onKickedFromServer(KickedFromServerEvent event) {
-        log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was kicked from <light_purple>" + event.getServer().getServerInfo().getName() + "<dark_aqua> for <light_purple>").append(event.getServerKickReason().isPresent() ? event.getServerKickReason().get() : mm("<empty>")).append(mm("<dark_aqua>.")));
+        if (event.getServer().getServerInfo().getName().equals(Config.target)) {
+            // kick from target server
+            try {
+                mutex.acquire();
+                Player player = event.getPlayer();
+                Component reason = event.getServerKickReason().isPresent() ? event.getServerKickReason().get() : mm("Kicked without a reason.");
+
+                // - kicking is not enabled
+                if (!Config.kick) {
+                    // save the disconnection time
+                    kickedPlayers.put(player, Instant.now().getEpochSecond());
+
+                    // send message
+                    player.sendMessage(mm("<gold>You were sent back to the queue for: <red>").append(reason).append(mm("<reset>")));
+                    log.info(mm("<white>" + player.getUsername() + "<dark_aqua> was sent back to server <yellow>" + Config.queue + "<dark_aqua> after a disconnection (\"").append(reason).append(mm("<dark_aqua>\"). Kicked count is " + kickedPlayers.size() + ".")));
+                } else {
+                    // set the disconnect reason from the target server (not the bungee message)
+                    player.disconnect(reason);
+                }
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            } finally {
+                mutex.release();
+            }
+        }
     }
 
     /**
@@ -84,14 +124,14 @@ public class Queue {
      */
     public void flushQueue() {
         // Ignore if queue is empty
-        if (queuedPlayers.isEmpty())
+        if (playerQueue.isEmpty())
             return;
 
         // check queue server reachability
         final RegisteredServer serverQueue;
 
         try {
-            serverQueue = getServer(Config.serverQueue);
+            serverQueue = getServer(Config.queue);
         } catch (ServerNotReachableException e) {
             log.warn(e.getMessage());
             return;
@@ -101,34 +141,25 @@ public class Queue {
         final RegisteredServer serverMain;
 
         try {
-            serverMain = getServer(Config.serverMain);
+            serverMain = getServer(Config.target);
         } catch (ServerNotReachableException e) {
-            if (Instant.now().getEpochSecond() % 10 == 0) {
-                serverQueue.getPlayersConnected().forEach(queuedPlayer -> queuedPlayer.sendMessage(Component.text(Config.messageOffline)));
-            }
-
+            // TODO: offline notification
             return;
         }
 
         // check main server full
-        boolean full = serverMain.getPlayersConnected().size() >= Config.maxPlayers;
-
-        // send info every 10 seconds
-        if (Instant.now().getEpochSecond() % 10 == 0) {
-            sendInfo(serverQueue, full);
-        }
-
-        if (full)
+        if (serverMain.getPlayersConnected().size() >= Config.maxPlayers)
+            // TODO: full notification
             return;
 
         try {
-            queueSemaphore.acquire();
+            mutex.acquire();
 
-            QueuedPlayer currPlayer = null;
+            Player currPlayer = null;
 
             // try to find the first player that got not kicked recently
-            for (QueuedPlayer testPlayer : queuedPlayers) {
-                if (testPlayer.queueTime() + Config.joinDelay > System.currentTimeMillis())
+            for (Player testPlayer : playerQueue) {
+                if (kickedPlayers.containsKey(testPlayer))
                     continue;
 
                 currPlayer = testPlayer;
@@ -136,57 +167,57 @@ public class Queue {
             }
 
             if (currPlayer == null) {
-                queueSemaphore.release();
+                mutex.release();
                 return;
             }
 
             // connect next player
-            UUID uuid = currPlayer.player().getUniqueId();
-
-            // lookup player from queue server and ping to be safe the player is connected
-            QueuedPlayer finalCurrPlayer = currPlayer;
+            UUID uuid = currPlayer.getUniqueId();
+            Player finalCurrPlayer = currPlayer;
 
             serverQueue.getPlayersConnected().stream()
                     .filter(p -> p.getUniqueId().equals(uuid))
                     .findAny().ifPresentOrElse(p -> {
-                                p.sendMessage(Component.text(Config.messageConnecting));
+                                // TODO: direct connection to the main server if the queue is empty
+                                p.sendMessage(mm(Config.messageConnecting));
                                 try {
                                     if (p.createConnectionRequest(serverMain).connect().get().isSuccessful()) {
-                                        queuedPlayers.removeFirst();
+                                        playerQueue.removeFirst();
                                         log.info(mm("<white>" + p.getUsername() + "<dark_aqua> connected to server <aqua>" + serverMain.getServerInfo().getName() + "<dark_aqua>. Queue count is " + serverQueue.getPlayersConnected().size() + ". Main count is " + (serverMain.getPlayersConnected().size()) + " of " + Config.maxPlayers + "."));
                                     }
                                 } catch (InterruptedException | ExecutionException e) {
-                                    log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.serverMain + "<red> failed: " + e.getMessage()));
-                                    // FIXME: requeue
-                                    queuedPlayers.removeFirst();
-                                    queuedPlayers.add(new QueuedPlayer(finalCurrPlayer.player(), System.currentTimeMillis()));
+                                    log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.target + "<red> failed: " + e.getMessage()));
+                                    // count that as a kick ;)
+                                    kickedPlayers.put(finalCurrPlayer, Instant.now().getEpochSecond());
                                 }
                             },
                             () -> {
-                                log.error(mm("<white>" + finalCurrPlayer.player().getUsername() + "s<red> connection to server <aqua>" + Config.serverMain + "<red> failed: player is not connected to " + serverQueue.getServerInfo().getName()));
-                                queuedPlayers.removeFirst();
+                                log.error(mm("<white>" + finalCurrPlayer.getUsername() + "s<red> connection to server <aqua>" + Config.target + "<red> failed: player is not connected to " + serverQueue.getServerInfo().getName()));
+                                playerQueue.removeFirst();
                             }
                     );
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
-            queueSemaphore.release();
+            mutex.release();
         }
     }
 
-    private void sendInfo(RegisteredServer serverQueue, boolean full) {
+    /**
+     * Tells players their queue position
+     */
+    public void sendUpdate() {
         int i = 1;
 
-        for (QueuedPlayer player : queuedPlayers) {
-            player.player().sendMessage(Component.text(Config.messagePosition + (i + 1) + "/" + queuedPlayers.size()));
+        for (Player player : playerQueue) {
+            player.sendMessage(mm(Config.messagePosition.replaceAll("%position%", Integer.toString(i)).replaceAll("%size%", Integer.toString(playerQueue.size()))));
             i++;
-        }
-
-        if (full) {
-            serverQueue.getPlayersConnected().forEach(queuedPlayer -> queuedPlayer.sendMessage(Component.text(Config.messageFull)));
         }
     }
 
+    /**
+     * Test a server connection and return the server object.
+     */
     private RegisteredServer getServer(String name) throws ServerNotReachableException {
         // Get server configured in velocity.toml by name
         Optional<RegisteredServer> serverOpt = proxyServer.getServer(name);
