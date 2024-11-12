@@ -58,7 +58,7 @@ tasks {
     }
 }
 
-tasks.register('runServerMain', runServer.getClass()) {
+tasks.register('runServerMain', runServer.getClass() as Class<Task>) {
     minecraftVersion("${project.minecraft_version}")
     systemProperty('com.mojang.eula.agree', 'true')
     systemProperty('Paper.skipServerPropertiesComments', 'true')
@@ -66,7 +66,7 @@ tasks.register('runServerMain', runServer.getClass()) {
     dependsOn('build')
 }
 
-tasks.register('runServerQueue', runServer.getClass()) {
+tasks.register('runServerQueue', runServer.getClass() as Class<Task>) {
     minecraftVersion("${project.minecraft_version}")
     systemProperty('com.mojang.eula.agree', 'true')
     systemProperty('Paper.skipServerPropertiesComments', 'true')

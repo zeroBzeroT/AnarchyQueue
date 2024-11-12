@@ -29,6 +29,8 @@ public class Config {
 
     public static int waitOnKick = 16;
 
+    public static boolean sendTitle = true;
+
     /**
      * Load the config from the plugin data folder
      *
@@ -65,5 +67,6 @@ public class Config {
         messageOffline = toml.getString("message-offline", "Server is currently down!");
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
+        sendTitle = toml.getBoolean("send-title", true);
     }
 }
