@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.zeroBzeroT.anarchyqueue.Components.mm;
 
@@ -28,7 +28,7 @@ public class Queue {
 
     private final ProxyServer proxyServer;
 
-    private final Semaphore mutex = new Semaphore(1);
+    private final ReentrantLock lock = new ReentrantLock();
 
     private final Deque<Player> playerQueue;
 
@@ -79,14 +79,14 @@ public class Queue {
             return;
 
         // Add Player to queue
+        lock.lock();
         try {
-            mutex.acquire();
             playerQueue.add(event.getPlayer());
             log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was added to the <light_purple>queue<dark_aqua>. Queue count is " + playerQueue.size() + "."));
-        } catch (InterruptedException e1) {
-            e1.printStackTrace();
+        } catch (Exception e) {
+            log.error(e.getMessage());
         } finally {
-            mutex.release();
+            lock.unlock();
         }
     }
 
@@ -97,16 +97,16 @@ public class Queue {
     public void onKickedFromServer(KickedFromServerEvent event) {
         if (event.getServer().getServerInfo().getName().equals(Config.target)) {
             // kick from target server
+            lock.lock();
             try {
-                mutex.acquire();
                 Player player = event.getPlayer();
                 Component reason = event.getServerKickReason().isPresent() ? event.getServerKickReason().get() : mm("Kicked without a reason.");
 
                 KickOrRequeue(player, reason);
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
+            } catch (Exception e) {
+                log.error(e.getMessage());
             } finally {
-                mutex.release();
+                lock.unlock();
             }
         }
     }
@@ -168,9 +168,8 @@ public class Queue {
             // TODO: full notification
             return;
 
+        lock.lock();
         try {
-            mutex.acquire();
-
             Player currPlayer = null;
 
             // try to find the first player that got not kicked recently
@@ -183,46 +182,44 @@ public class Queue {
             }
 
             // no player to connect to the main server
-            if (currPlayer == null) {
-                mutex.release();
-                return;
-            }
+            if (currPlayer != null) {
 
-            // connect next player
-            UUID uuid = currPlayer.getUniqueId();
-            Player finalCurrPlayer = currPlayer;
+                // connect next player
+                UUID uuid = currPlayer.getUniqueId();
+                Player finalCurrPlayer = currPlayer;
 
-            serverQueue.getPlayersConnected().stream()
-                    .filter(p -> p.getUniqueId().equals(uuid))
-                    .findAny().ifPresentOrElse(p -> {
-                                p.sendMessage(mm(Config.messageConnecting));
-                                try {
-                                    var conReq = p.createConnectionRequest(serverMain).connect().get();
+                serverQueue.getPlayersConnected().stream()
+                        .filter(p -> p.getUniqueId().equals(uuid))
+                        .findAny().ifPresentOrElse(p -> {
+                                    p.sendMessage(mm(Config.messageConnecting));
+                                    try {
+                                        var conReq = p.createConnectionRequest(serverMain).connect().get();
 
-                                    if (conReq.isSuccessful()) {
-                                        playerQueue.removeFirst();
-                                        // Clear the title
-                                        if (Config.sendTitle) {
-                                            sendTitle(finalCurrPlayer, mm(" "), mm(" "), 0, 0, 0);
+                                        if (conReq.isSuccessful()) {
+                                            playerQueue.removeFirst();
+                                            // Clear the title
+                                            if (Config.sendTitle) {
+                                                sendTitle(finalCurrPlayer, mm(" "), mm(" "), 0, 0, 0);
+                                            }
+                                            log.info(mm("<white>" + p.getUsername() + "<dark_aqua> connected to server <aqua>" + serverMain.getServerInfo().getName() + "<dark_aqua>. Queue count is " + serverQueue.getPlayersConnected().size() + ". Main count is " + (serverMain.getPlayersConnected().size()) + " of " + Config.maxPlayers + "."));
+                                        } else {
+                                            var reason = conReq.getReasonComponent().isPresent() ? conReq.getReasonComponent().get() : mm("Connection to the main server failed.");
+                                            KickOrRequeue(finalCurrPlayer, reason);
                                         }
-                                        log.info(mm("<white>" + p.getUsername() + "<dark_aqua> connected to server <aqua>" + serverMain.getServerInfo().getName() + "<dark_aqua>. Queue count is " + serverQueue.getPlayersConnected().size() + ". Main count is " + (serverMain.getPlayersConnected().size()) + " of " + Config.maxPlayers + "."));
-                                    } else {
-                                        var reason = conReq.getReasonComponent().isPresent() ? conReq.getReasonComponent().get() : mm("Connection to the main server failed.");
-                                        KickOrRequeue(finalCurrPlayer, reason);
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.target + "<red> failed with an exception: " + e.getMessage()));
+                                        // server down?
+                                        kickedPlayers.put(finalCurrPlayer, Instant.now().getEpochSecond());
                                     }
-                                } catch (InterruptedException | ExecutionException e) {
-                                    log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.target + "<red> failed with an exception: " + e.getMessage()));
-                                    // server down?
-                                    kickedPlayers.put(finalCurrPlayer, Instant.now().getEpochSecond());
-                                }
-                            },
-                            // player is in the queue, but not connected to the queue server
-                            playerQueue::removeFirst
-                    );
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+                                },
+                                // player is in the queue, but not connected to the queue server
+                                playerQueue::removeFirst
+                        );
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         } finally {
-            mutex.release();
+            lock.unlock();
         }
     }
 
