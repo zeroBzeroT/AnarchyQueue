@@ -9,3 +9,4 @@ message-offline = "<red>Server is currently down!<reset>"
 kick = true
 wait-on-kick = 16
 send-title = true
+bStats = true

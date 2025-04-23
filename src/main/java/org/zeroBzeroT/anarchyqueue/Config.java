@@ -31,6 +31,8 @@ public class Config {
 
     public static boolean sendTitle = true;
 
+    public static boolean bStats = true;
+
     /**
      * Load the config from the plugin data folder
      *
@@ -68,5 +70,6 @@ public class Config {
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
         sendTitle = toml.getBoolean("send-title", true);
+        bStats = toml.getBoolean("bStats", true);
     }
 }

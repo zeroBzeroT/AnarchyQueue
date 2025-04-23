@@ -22,6 +22,7 @@ repositories {
 dependencies {
     compileOnly group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
     annotationProcessor group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
+    implementation group: 'org.bstats', name: 'bstats-velocity', version: '3.1.0'
 }
 
 java {

@@ -1,9 +1,9 @@
 package org.zeroBzeroT.anarchyqueue;
 
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
-import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -111,21 +111,21 @@ public class Queue {
             }
         }
     }
-	
-	@Subscribe
-	public void onPlayerDisconnect(DisconnectEvent event) {
-		lock.lock();
-		try {
-			Player player = event.getPlayer();
-			if (playerQueue.contains(player)) {
-				playerQueue.remove(player);
-				kickedPlayers.remove(player);
-				log.info(mm("<white>" + player.getUsername() + "<dark_aqua> disconnected and was removed from the <light_purple>queue<dark_aqua>."));
-			}
-		} finally {
-			lock.unlock();
-		}
-	}
+
+    @Subscribe
+    public void onPlayerDisconnect(DisconnectEvent event) {
+        lock.lock();
+        try {
+            Player player = event.getPlayer();
+            if (playerQueue.contains(player)) {
+                playerQueue.remove(player);
+                kickedPlayers.remove(player);
+                log.info(mm("<white>" + player.getUsername() + "<dark_aqua> disconnected and was removed from the <light_purple>queue<dark_aqua>."));
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
 
 
     /**
