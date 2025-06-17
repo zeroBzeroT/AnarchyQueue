@@ -67,6 +67,13 @@ public class Queue {
     }
 
     /**
+     * Current size of the queue.
+     */
+    public int getSize() {
+        return playerQueue.size();
+    }
+
+    /**
      * This event is fired once the player has successfully connected to the
      * target server and the connection to the previous server has been de-established.
      */

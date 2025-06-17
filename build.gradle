@@ -4,6 +4,7 @@ plugins {
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.1.10'
     id 'xyz.jpenilla.run-paper' version '2.3.1'
     id 'xyz.jpenilla.run-velocity' version '2.3.1'
+//    id 'io.github.goooler.shadow' version '8.1.8'
 }
 
 group = 'org.zeroBzeroT'
@@ -22,7 +23,7 @@ repositories {
 dependencies {
     compileOnly group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
     annotationProcessor group: 'com.velocitypowered', name: 'velocity-api', version: "${project.velocity_api_version}"
-    implementation group: 'org.bstats', name: 'bstats-velocity', version: '3.1.0'
+//    implementation group: 'org.bstats', name: 'bstats-velocity', version: '3.1.0'
 }
 
 java {
@@ -45,6 +46,22 @@ def generateTemplates = tasks.register('generateTemplates', Copy) { task ->
     task.expand props
 }
 sourceSets.main.java.srcDir(generateTemplates.map { it.outputs })
+
+/*
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveFileName = "${project.name}-${project.version}+${project.velocity_api_version}_velocity.jar"
+    destinationDirectory = layout.buildDirectory.dir('dist')
+
+    relocate "org.bstats", "org.zeroBzeroT.anarchyqueue.shaded.bstats"
+
+    // delete unshaded jar
+    doLast {
+        file(jar.archiveFile).delete()
+    }
+}
+build.finalizedBy(shadowJar)
+*/
 
 // put jar artifact in build/dist/
 jar.destinationDirectory.set(layout.buildDirectory.dir('dist'))

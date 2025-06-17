@@ -8,7 +8,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import org.bstats.velocity.Metrics;
+import org.zeroBzeroT.anarchyqueue.bStats.Metrics;
 
 import java.nio.file.Path;
 
@@ -32,13 +32,16 @@ public class Main {
 
     private final Metrics.Factory metricsFactory;
 
+    private Queue queue;
+
     @Inject
-    public Main(ProxyServer server, CommandManager commandManager, ComponentLogger logger, @DataDirectory final Path dataDir, Metrics.Factory metricsFactory) {
+    public Main(ProxyServer server, CommandManager commandManager, ComponentLogger logger, Metrics.Factory metricsFactory, @DataDirectory final Path dataDir) {
         this.server = server;
         this.log = logger;
         this.dataDir = dataDir;
         instance = this;
         this.metricsFactory = metricsFactory;
+        server.getCommandManager().register("queue", new QueueCommand());
     }
 
     public static Main getInstance() {
@@ -46,6 +49,10 @@ public class Main {
             throw new IllegalStateException("instance was null!");
 
         return instance;
+    }
+
+    public Queue getQueue() {
+        return queue;
     }
 
     @Subscribe
@@ -60,7 +67,7 @@ public class Main {
         }
 
         // Register queue
-        Queue queue = new Queue(server);
+        queue = new Queue(server);
         server.getEventManager().register(this, queue);
 
         // Load Plugin Metrics
