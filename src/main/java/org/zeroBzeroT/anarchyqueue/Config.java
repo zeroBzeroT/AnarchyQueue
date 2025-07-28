@@ -13,8 +13,6 @@ public class Config {
 
     public static String queue = null;
 
-    public static String name = null; // TODO: not in use, implement or remove this
-
     public static int maxPlayers = 0;
 
     public static String messagePosition = null;
@@ -25,7 +23,11 @@ public class Config {
 
     public static String messageOffline = null;
 
-    public static boolean kick = true;
+    public static boolean kickPassthrough = true;
+
+    public static boolean kickOnRestart = false;
+
+    public static boolean kickOnBusy = false;
 
     public static int waitOnKick = 16;
 
@@ -61,13 +63,14 @@ public class Config {
         Toml toml = new Toml().read(file);
         target = toml.getString("target", "main");
         queue = toml.getString("queue", "queue");
-        name = toml.getString("name", "0b0t");
         maxPlayers = toml.getLong("max-players", 420L).intValue();
         messagePosition = toml.getString("message-position", "Position in queue: ");
         messageConnecting = toml.getString("message-connecting", "Connecting to the server...");
         messageFull = toml.getString("message-full", "Server is currently full!");
         messageOffline = toml.getString("message-offline", "Server is currently offline!");
-        kick = toml.getBoolean("kick", true);
+        kickPassthrough = toml.getBoolean("kick-passthrough", true);
+        kickOnRestart = toml.getBoolean("kick-on-restart", false);
+        kickOnBusy = toml.getBoolean("kick-on-busy", false);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
         sendTitle = toml.getBoolean("send-title", true);
         bStats = toml.getBoolean("bStats", true);

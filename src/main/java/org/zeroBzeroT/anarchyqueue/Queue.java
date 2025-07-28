@@ -10,6 +10,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.title.Title;
 
 import java.time.Duration;
@@ -74,6 +75,13 @@ public class Queue {
     }
 
     /**
+     * Converts Component to a plain string
+     */
+    private String toPlainText(Component component) {
+        return PlainTextComponentSerializer.plainText().serialize(component);
+    }
+
+    /**
      * This event is fired before the player connects to a server.
      * Velocity will wait on this event to finish firing before initiating the connection.
      */
@@ -95,7 +103,7 @@ public class Queue {
                 if (currentPlayers < Config.maxPlayers) {
                     // Allow direct connection to target server
                     event.setResult(ServerPreConnectEvent.ServerResult.allowed(serverTarget));
-                    log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was directly connected to server <aqua>" + Config.target + "<dark_aqua>. Main count is " + (getSize() + 1) + " of " + Config.maxPlayers + "."));
+                    log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was directly connected to server <aqua>" + Config.target + "<dark_aqua>. Main count is " + (serverTarget.getPlayersConnected().size() + 1) + " of " + Config.maxPlayers + "."));
                 } else {
                     // Notify player that server is full
                     event.getPlayer().sendMessage(mm(Config.messageFull));
@@ -167,7 +175,6 @@ public class Queue {
         }
     }
 
-
     /**
      * Kick a player if kicking is allowed in the config
      *
@@ -175,8 +182,19 @@ public class Queue {
      * @param reason kicking reason from the target server
      */
     private void KickOrRequeue(Player player, Component reason) {
-        // is kicking  enabled?
-        if (!Config.kick) {
+        String textReason = toPlainText(reason);
+
+        // Cancel the event, if one of the following:
+        // - kicking is not enabled
+        // - target is restarting (and restart kicks are disabled)
+        // - target is busy with connecting players (and busy kicks are disabled)
+        if (!Config.kickPassthrough
+                || (!Config.kickOnRestart && textReason.contains("Server is restarting")) // Restart
+                || (!Config.kickOnRestart && textReason.contains("Kicked without a reason.")) // Server went down
+                || (!Config.kickOnRestart && textReason.contains("Server closed")) // Server stopped
+                || (!Config.kickOnBusy && textReason.contains("Too many people logging in, retry soon.")) // NCP
+                || (!Config.kickOnBusy && textReason.contains("Too fast re-login, try with a little delay.")) // NCP
+        ) {
             // save the disconnection time
             kickedPlayers.put(player, Instant.now().getEpochSecond());
 

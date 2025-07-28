@@ -1,12 +1,13 @@
 target = "main"
 queue = "queue"
-name = "0b0t"
 max-players = 420
 message-position = "<gold>Position in queue: <bold>%position%<reset>"
 message-connecting = "<gold>Connecting to the server...<reset>"
 message-full = "<red>Server is currently full!<reset>"
 message-offline = "<red>Server is currently down!<reset>"
-kick = true
+kick-passthrough = true
+kick-on-restart = false
+kick-on-busy = false
 wait-on-kick = 16
 send-title = true
 bStats = true
