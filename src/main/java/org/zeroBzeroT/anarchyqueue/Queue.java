@@ -4,6 +4,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -21,7 +22,6 @@ import static org.zeroBzeroT.anarchyqueue.Components.mm;
 
 // velocity api event docs:
 // https://jd.papermc.io/velocity/3.3.0/com/velocitypowered/api/event/package-summary.html
-// TODO: direct connection to the main server if the queue is empty
 // TODO: replace player objects with uuids
 
 public class Queue {
@@ -74,6 +74,40 @@ public class Queue {
     }
 
     /**
+     * This event is fired before the player connects to a server.
+     * Velocity will wait on this event to finish firing before initiating the connection.
+     */
+    @Subscribe
+    public void onServerPreConnect(ServerPreConnectEvent event) {
+        // Check if it's a "fresh" connection
+        if (event.getPreviousServer() != null)
+            return;
+
+        // Check if player is connecting to the queue server
+        if (getSize() == 0 && event.getOriginalServer().getServerInfo().getName().equals(Config.queue)) {
+            // If queue is empty, attempt passthrough
+            try {
+                // Check target server reachability
+                RegisteredServer serverTarget = getServer(Config.target);
+                int currentPlayers = serverTarget.getPlayersConnected().size();
+
+                // Check if target server is not full
+                if (currentPlayers < Config.maxPlayers) {
+                    // Allow direct connection to target server
+                    event.setResult(ServerPreConnectEvent.ServerResult.allowed(serverTarget));
+                    log.info(mm("<white>" + event.getPlayer().getUsername() + "<dark_aqua> was directly connected to server <aqua>" + Config.target + "<dark_aqua>. Main count is " + (getSize() + 1) + " of " + Config.maxPlayers + "."));
+                } else {
+                    // Notify player that server is full
+                    event.getPlayer().sendMessage(mm(Config.messageFull));
+                }
+            } catch (ServerNotReachableException e) {
+                // Target server offline or unreachable, proceed with queue and notify the player
+                event.getPlayer().sendMessage(mm(Config.messageOffline));
+            }
+        }
+    }
+
+    /**
      * This event is fired once the player has successfully connected to the
      * target server and the connection to the previous server has been de-established.
      */
@@ -109,7 +143,6 @@ public class Queue {
             try {
                 Player player = event.getPlayer();
                 Component reason = event.getServerKickReason().isPresent() ? event.getServerKickReason().get() : mm("Kicked without a reason.");
-
                 KickOrRequeue(player, reason);
             } catch (Exception e) {
                 log.error(e.getMessage());
@@ -183,13 +216,13 @@ public class Queue {
         try {
             serverMain = getServer(Config.target);
         } catch (ServerNotReachableException e) {
-            // TODO: offline notification
+            // offline notification handled by onServerPreConnect
             return;
         }
 
         // check main server full
         if (serverMain.getPlayersConnected().size() >= Config.maxPlayers)
-            // TODO: full notification
+            // full notification handled by onServerPreConnect
             return;
 
         lock.lock();
@@ -300,12 +333,16 @@ public class Queue {
      */
     public void sendTitle(Player player, Component title, Component subtitle, int fadeIn, int stay, int fadeOut) {
         try {
+            // Convert ticks to milliseconds (1 tick = 50 ms)
             Title bungeeTitle = Title.title(
                     title,
                     subtitle,
-                    Title.Times.times(Duration.ofMillis(fadeIn * 20L),
-                            Duration.ofMillis(stay * 20L),
-                            Duration.ofMillis(fadeOut * 20L)));
+                    Title.Times.times(
+                            Duration.ofMillis(fadeIn * 50L),
+                            Duration.ofMillis(stay * 50L),
+                            Duration.ofMillis(fadeOut * 50L)
+                    )
+            );
             player.showTitle(bungeeTitle);
         } catch (Exception e) {
             log.error(mm("<red>Could not send title to <white>" + player.getUsername() + "<red>: " + e.getMessage()));

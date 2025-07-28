@@ -21,9 +21,9 @@ public class Config {
 
     public static String messageConnecting = null;
 
-    public static String messageFull = null; // TODO: not in use, implement or remove this
+    public static String messageFull = null;
 
-    public static String messageOffline = null; // TODO: not in use, implement or remove this
+    public static String messageOffline = null;
 
     public static boolean kick = true;
 
@@ -66,7 +66,7 @@ public class Config {
         messagePosition = toml.getString("message-position", "Position in queue: ");
         messageConnecting = toml.getString("message-connecting", "Connecting to the server...");
         messageFull = toml.getString("message-full", "Server is currently full!");
-        messageOffline = toml.getString("message-offline", "Server is currently down!");
+        messageOffline = toml.getString("message-offline", "Server is currently offline!");
         kick = toml.getBoolean("kick", true);
         waitOnKick = toml.getLong("wait-on-kick", 16L).intValue();
         sendTitle = toml.getBoolean("send-title", true);
