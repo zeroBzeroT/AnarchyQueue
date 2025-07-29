@@ -23,7 +23,6 @@ import static org.zeroBzeroT.anarchyqueue.Components.mm;
 
 // velocity api event docs:
 // https://jd.papermc.io/velocity/3.3.0/com/velocitypowered/api/event/package-summary.html
-// TODO: replace player objects with uuids
 
 public class Queue {
     private final ComponentLogger log;
@@ -34,7 +33,7 @@ public class Queue {
 
     private final Deque<Player> playerQueue;
 
-    private final HashMap<Player, Long> kickedPlayers;
+    private final HashMap<UUID, Long> kickedPlayers;
 
     /**
      * Initializes the queue.
@@ -91,9 +90,10 @@ public class Queue {
         if (event.getPreviousServer() != null)
             return;
 
-        // Check if player is connecting to the queue server
-        if (getSize() == 0 && event.getOriginalServer().getServerInfo().getName().equals(Config.queue)) {
-            // If queue is empty, attempt passthrough
+        // If queue is empty and player is not in the kicked list, attempt passthrough
+        if (getSize() == 0 &&
+                event.getOriginalServer().getServerInfo().getName().equals(Config.queue) &&
+                !kickedPlayers.containsKey(event.getPlayer().getUniqueId())) {
             try {
                 // Check target server reachability
                 RegisteredServer serverTarget = getServer(Config.target);
@@ -167,7 +167,7 @@ public class Queue {
             Player player = event.getPlayer();
             if (playerQueue.contains(player)) {
                 playerQueue.remove(player);
-                kickedPlayers.remove(player);
+                // Leave the players UUID in the kicked players to prevent fast relogs
                 log.info(mm("<white>" + player.getUsername() + "<dark_aqua> disconnected and was removed from the <light_purple>queue<dark_aqua>."));
             }
         } finally {
@@ -196,7 +196,7 @@ public class Queue {
                 || (!Config.kickOnBusy && textReason.contains("Too fast re-login, try with a little delay.")) // NCP
         ) {
             // save the disconnection time
-            kickedPlayers.put(player, Instant.now().getEpochSecond());
+            kickedPlayers.put(player.getUniqueId(), Instant.now().getEpochSecond());
 
             // send message
             player.sendMessage(mm("<gold>You were sent back to the queue for: <red>").append(reason).append(mm("<reset>")));
@@ -249,7 +249,7 @@ public class Queue {
 
             // try to find the first player that got not kicked recently
             for (Player testPlayer : playerQueue) {
-                if (kickedPlayers.containsKey(testPlayer))
+                if (kickedPlayers.containsKey(testPlayer.getUniqueId()))
                     continue;
 
                 currPlayer = testPlayer;
@@ -284,7 +284,7 @@ public class Queue {
                                     } catch (InterruptedException | ExecutionException e) {
                                         log.error(mm("<white>" + p.getUsername() + "s<red> connection to server <aqua>" + Config.target + "<red> failed with an exception: " + e.getMessage()));
                                         // server down?
-                                        kickedPlayers.put(finalCurrPlayer, Instant.now().getEpochSecond());
+                                        kickedPlayers.put(finalCurrPlayer.getUniqueId(), Instant.now().getEpochSecond());
                                     }
                                 },
                                 // player is in the queue, but not connected to the queue server
