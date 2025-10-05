@@ -42,6 +42,7 @@ public class Main {
         instance = this;
         this.metricsFactory = metricsFactory;
         server.getCommandManager().register("queue", new QueueCommand());
+        server.getCommandManager().register("drop", new DropCommand(server));
     }
 
     public static Main getInstance() {
