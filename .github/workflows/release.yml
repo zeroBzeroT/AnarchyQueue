@@ -30,7 +30,7 @@ jobs:
         run: ./gradlew --console plain --no-daemon --full-stacktrace check build
 
       - name: 'Release plugin'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           body: 'automated release at commit ${{ github.sha }}'
