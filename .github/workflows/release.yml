@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
 
       - name: 'Validate gradlew'
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
